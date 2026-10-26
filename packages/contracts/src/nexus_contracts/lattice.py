@@ -1,53 +1,57 @@
 from enum import Enum
-from typing import Set, Tuple, List, Optional
+from typing import Sequence
 
 class Tier(str, Enum):
-    """
-    Security classifications for the Nexus platform.
-    PUBLIC: Openly accessible across campus.
-    SHARED: Accessible under authenticated mutual project/pod boundary.
-    CONFIDENTIAL: Private to researcher vault, strictly zero-knowledge.
-    """
-    PUBLIC = "PUBLIC"
-    SHARED = "SHARED"
-    CONFIDENTIAL = "CONFIDENTIAL"
+    PUBLIC = "public"
+    SHARED = "shared"
+    CONFIDENTIAL = "confidential"
 
-    def __lt__(self, other):
+    @property
+    def level(self) -> int:
+        if self == Tier.PUBLIC:
+            return 1
+        elif self == Tier.SHARED:
+            return 2
+        return 3
+
+    def __lt__(self, other: "Tier") -> bool:
         if not isinstance(other, Tier):
             return NotImplemented
-        order = {Tier.PUBLIC: 0, Tier.SHARED: 1, Tier.CONFIDENTIAL: 2}
-        return order[self] < order[other]
+        return self.level < other.level
 
-    def __le__(self, other):
+    def __le__(self, other: "Tier") -> bool:
         if not isinstance(other, Tier):
             return NotImplemented
-        order = {Tier.PUBLIC: 0, Tier.SHARED: 1, Tier.CONFIDENTIAL: 2}
-        return order[self] <= order[other]
+        return self.level <= other.level
 
-    def __gt__(self, other):
+    def __gt__(self, other: "Tier") -> bool:
         if not isinstance(other, Tier):
             return NotImplemented
-        order = {Tier.PUBLIC: 0, Tier.SHARED: 1, Tier.CONFIDENTIAL: 2}
-        return order[self] > order[other]
+        return self.level > other.level
 
-    def __ge__(self, other):
+    def __ge__(self, other: "Tier") -> bool:
         if not isinstance(other, Tier):
             return NotImplemented
-        order = {Tier.PUBLIC: 0, Tier.SHARED: 1, Tier.CONFIDENTIAL: 2}
-        return order[self] >= order[other]
+        return self.level >= other.level
+
 
 def combine_tiers(*tiers: Tier) -> Tier:
-    """Combines multiple tiers using the MAX rule (least upper bound)."""
+    """Apply the MAX-rule: combining data of tier A and tier B yields max(tier_a, tier_b)."""
     if not tiers:
         return Tier.PUBLIC
-    max_tier = Tier.PUBLIC
-    for t in tiers:
-        if t > max_tier:
-            max_tier = t
-    return max_tier
+    return max(tiers, key=lambda t: t.level)
+
 
 class TierLattice:
-    """Information Flow Control lattice implementation."""
-    @staticmethod
-    def permits_flow(source_tier: Tier, target_tier: Tier) -> bool:
-        return source_tier <= target_tier
+    """Formally-specified 3-tier lattice (PUBLIC < SHARED < CONFIDENTIAL)."""
+    LATTICE_VERSION: str = "v1.0"
+
+    @classmethod
+    def validate_dominance(cls, high: Tier, low: Tier) -> bool:
+        """Verify that high dominates or equals low."""
+        return high >= low
+
+    @classmethod
+    def permits_flow(cls, source_tier: Tier, sink_tier: Tier) -> bool:
+        """Information may flow from low security to high security (no read up, no write down)."""
+        return source_tier <= sink_tier
