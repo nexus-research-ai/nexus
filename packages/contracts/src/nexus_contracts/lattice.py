@@ -2,33 +2,52 @@ from enum import Enum
 from typing import Set, Tuple, List, Optional
 
 class Tier(str, Enum):
-    """Security classifications for the Nexus platform."""
+    """
+    Security classifications for the Nexus platform.
+    PUBLIC: Openly accessible across campus.
+    SHARED: Accessible under authenticated mutual project/pod boundary.
+    CONFIDENTIAL: Private to researcher vault, strictly zero-knowledge.
+    """
     PUBLIC = "PUBLIC"
     SHARED = "SHARED"
     CONFIDENTIAL = "CONFIDENTIAL"
 
-# Initial manual level lookups
-_ORDER_MAP = {
-    "PUBLIC": 0,
-    "SHARED": 1,
-    "CONFIDENTIAL": 2,
-}
+    def __lt__(self, other):
+        if not isinstance(other, Tier):
+            return NotImplemented
+        order = {Tier.PUBLIC: 0, Tier.SHARED: 1, Tier.CONFIDENTIAL: 2}
+        return order[self] < order[other]
 
-def is_strictly_higher(t1: str, t2: str) -> bool:
-    return _ORDER_MAP.get(t1, 0) > _ORDER_MAP.get(t2, 0)
+    def __le__(self, other):
+        if not isinstance(other, Tier):
+            return NotImplemented
+        order = {Tier.PUBLIC: 0, Tier.SHARED: 1, Tier.CONFIDENTIAL: 2}
+        return order[self] <= order[other]
 
-def is_equal_or_higher(t1: str, t2: str) -> bool:
-    return _ORDER_MAP.get(t1, 0) >= _ORDER_MAP.get(t2, 0)
+    def __gt__(self, other):
+        if not isinstance(other, Tier):
+            return NotImplemented
+        order = {Tier.PUBLIC: 0, Tier.SHARED: 1, Tier.CONFIDENTIAL: 2}
+        return order[self] > order[other]
 
-def join_tiers_naive(t1: Tier, t2: Tier) -> Tier:
-    if t1 == Tier.CONFIDENTIAL or t2 == Tier.CONFIDENTIAL:
-        return Tier.CONFIDENTIAL
-    if t1 == Tier.SHARED or t2 == Tier.SHARED:
-        return Tier.SHARED
-    return Tier.PUBLIC
+    def __ge__(self, other):
+        if not isinstance(other, Tier):
+            return NotImplemented
+        order = {Tier.PUBLIC: 0, Tier.SHARED: 1, Tier.CONFIDENTIAL: 2}
+        return order[self] >= order[other]
 
 def combine_tiers(*tiers: Tier) -> Tier:
-    current = Tier.PUBLIC
+    """Combines multiple tiers using the MAX rule (least upper bound)."""
+    if not tiers:
+        return Tier.PUBLIC
+    max_tier = Tier.PUBLIC
     for t in tiers:
-        current = join_tiers_naive(current, t)
-    return current
+        if t > max_tier:
+            max_tier = t
+    return max_tier
+
+class TierLattice:
+    """Information Flow Control lattice implementation."""
+    @staticmethod
+    def permits_flow(source_tier: Tier, target_tier: Tier) -> bool:
+        return source_tier <= target_tier
