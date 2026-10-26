@@ -1,3 +1,5 @@
-"""Nexus Contracts: Core schemas, lattices, and protocol interfaces."""
-# Temporary package stub
-__version__ = "0.1.0-alpha"
+"""Nexus canonical contracts and tier lattice."""
+from .lattice import Tier, TierLattice, combine_tiers
+from .projection import PublishableProjection, DiscoverabilityScope
+from .interfaces import IPolicyEnforcement, IModelRouter, IModelProvider, IRetrievalStrategy, IGrantStore, IRevocationAuthority, IAuditSink
+from .models import Principal, AccessGrant, PolicyVerdict, GroundingSource, GrantProposal
