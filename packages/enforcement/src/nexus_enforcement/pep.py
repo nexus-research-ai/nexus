@@ -13,22 +13,15 @@ class PolicyEnforcementPoint:
     
     def __init__(self, log_verdicts: bool = True):
         self.log_verdicts = log_verdicts
-        self._check_count = 0
 
     def evaluate_egress(self, projection: PublishableProjection, requester: Principal) -> PolicyVerdict:
-        self._check_count += 1
-        print(f"[PEP-DEBUG #{self._check_count}] Evaluating egress for {projection.entity_id}")
-        
-        # Enforce that CONFIDENTIAL projections never egress outside cell
         if projection.tier == Tier.CONFIDENTIAL:
-            print("[PEP-DEBUG] DENIED: Confidential projection cannot egress")
             return PolicyVerdict(False, "Confidential items cannot egress outside cell boundary")
 
-        # Department scope check (naive list scan)
         if projection.discoverability_scope == DiscoverabilityScope.DEPARTMENT_ONLY:
-            allowed_depts = [projection.payload.get("department", "")]
-            if requester.department not in allowed_depts:
-                print(f"[PEP-DEBUG] DENIED: Dept {requester.department} not in {allowed_depts}")
-                return PolicyVerdict(False, "Cross-department egress denied under DEPARTMENT_ONLY")
+            proj_dept = projection.payload.get("department", "")
+            # Strict department comparison
+            if requester.department != proj_dept:
+                return PolicyVerdict(False, f"Cross-department egress denied: requires {proj_dept}")
 
         return PolicyVerdict(True, "Access permitted by policy")

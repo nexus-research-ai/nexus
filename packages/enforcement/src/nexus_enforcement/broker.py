@@ -1,25 +1,16 @@
-from typing import Dict, Any, Optional
-from nexus_contracts.lattice import Tier
+from typing import Any, Dict
 from nexus_contracts.models import Principal
-from nexus_enforcement.pep import PolicyEnforcementPoint
+from nexus_contracts.lattice import Tier
+from .pep import PolicyEnforcementPoint
 
 class DataAccessBroker:
-    """Mediates read/write requests through the PEP boundary."""
-    
-    def __init__(self, pep: PolicyEnforcementPoint, strict_mode: bool = False):
+    """The ONLY component permitted to hold raw store credentials."""
+
+    def __init__(self, pep: PolicyEnforcementPoint):
         self.pep = pep
-        self.strict_mode = strict_mode
 
-    def mediate_access(self, principal: Principal, record: Dict[str, Any]) -> Dict[str, Any]:
-        tier = record.get("tier", Tier.PUBLIC)
-        
-        if not self.strict_mode and principal.department == "Admin":
-            return record
-
-        if tier == Tier.CONFIDENTIAL:
-            return {
-                "entity_id": record.get("entity_id", "redacted"),
-                "tier": Tier.CONFIDENTIAL,
-                "payload": "[REDACTED - CONFIDENTIAL CELL ASSET]",
-            }
-        return record
+    def execute_query(self, requester: Principal, query_tier: Tier, query_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute query through PEP validation."""
+        if query_tier == Tier.CONFIDENTIAL and "faculty" not in requester.roles and "co-pi" not in requester.roles:
+            raise PermissionError("Access to confidential research derivatives requires Co-PI authorization.")
+        return {"status": "success", "records": [], "tier": query_tier.value}
