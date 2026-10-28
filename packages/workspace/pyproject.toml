@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nexus-workspace"
+version = "0.1.0"
+description = "Nexus private vault, cryptographic priority proofs, and proposal editor"
+requires-python = ">=3.12"
+dependencies = [
+    "nexus-contracts",
+    "cryptography>=43.0.0",
+    "pydantic>=2.9.0"
+]
