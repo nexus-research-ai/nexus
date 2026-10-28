@@ -3,6 +3,7 @@ from nexus_contracts.lattice import Tier
 from nexus_contracts.projection import PublishableProjection, DiscoverabilityScope
 from nexus_contracts.models import Principal
 from nexus_enforcement.pep import PolicyEnforcementPoint
+from nexus_workspace.priority_proof import PriorityProofEngine
 
 def test_pep_denies_confidential_projections():
     with pytest.raises(ValueError):
@@ -32,3 +33,13 @@ def test_pep_egress_department_scope():
 
     v2 = pep.evaluate_egress(proj, bio_principal)
     assert v2.allowed is True
+
+def test_priority_proof_generation():
+    proof = PriorityProofEngine.generate_proof(
+        hypothesis="Differential privacy for real-time EEG decoders",
+        author_id="researcher-aria",
+        institution="UC Berkeley"
+    )
+    assert proof["certificate_number"].startswith("NX-")
+    assert len(proof["merkle_root"]) == 64
+    assert len(proof["sha256_hash"]) == 64
