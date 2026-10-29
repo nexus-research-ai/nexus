@@ -75,3 +75,7 @@ class LivingCampusGraph:
             "nodes": [n.model_dump() for n in self.nodes.values()],
             "edges": [e.model_dump() for e in self.edges]
         }
+
+    def export_svg_topology(self) -> str:
+        # Draft SVG export with basic styling
+        return '<svg viewBox="0 0 800 600"><circle cx="100" cy="100" r="10" stroke="#fff"/></svg>'
