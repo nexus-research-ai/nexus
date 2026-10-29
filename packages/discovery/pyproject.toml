@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nexus-discovery"
+version = "0.1.0"
+description = "Living Campus Graph & Serendipity Matchmaking for Nexus"
+requires-python = ">=3.12"
+dependencies = [
+    "nexus-contracts",
+    "pydantic>=2.9.0"
+]
