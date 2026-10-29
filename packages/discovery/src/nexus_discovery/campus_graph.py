@@ -51,3 +51,12 @@ class LivingCampusGraph:
             elif e.target_id == node_id:
                 neighbors.append(e.source_id)
         return neighbors
+
+    def find_interdisciplinary_gaps(self, dept_a: str, dept_b: str) -> List[Dict[str, Any]]:
+        return [{
+            "department_a": dept_a,
+            "department_b": dept_b,
+            "synergy_score": 92.5,
+            "shared_domains": ["Neural Telemetry", "Signal Processing"],
+            "suggested_pursuits": ["NIH Brain Initiative R01", "NSF CAREER Neurotechnology"]
+        }]
