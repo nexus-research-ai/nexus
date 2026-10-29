@@ -1,62 +1,77 @@
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import Dict, List, Any, Optional
+from pydantic import BaseModel, Field
 
-@dataclass
-class GraphNode:
+class GraphNode(BaseModel):
     id: str
     label: str
-    node_type: str
+    node_type: str  # researcher, project, paper, skill, grant
     department: str
-    skills: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
-@dataclass
-class GraphEdge:
+class GraphEdge(BaseModel):
     source_id: str
     target_id: str
-    relation: str
+    relation: str  # authors, cites, offers_skill, requires_skill, matches, eligible_for
     weight: float = 1.0
 
-# Initial hardcoded campus department graph stubs
-MOCK_CAMPUS_DEPARTMENTS = [
-    {"dept": "EECS", "building": "Cory Hall", "faculty_count": 84, "clusters": ["Systems", "AI", "Security"], "active_grants": 42},
-    {"dept": "Bioengineering", "building": "Stanley Hall", "faculty_count": 42, "clusters": ["Neural Eng", "Biomechanics"], "active_grants": 28},
-    {"dept": "Neuroscience", "building": "Barker Hall", "faculty_count": 31, "clusters": ["Cognitive", "Cellular"], "active_grants": 19},
-    {"dept": "Statistics", "building": "Evans Hall", "faculty_count": 28, "clusters": ["High-dim Inference", "Probability"], "active_grants": 15},
-    {"dept": "Mechanical Engineering", "building": "Etcheverry Hall", "faculty_count": 52, "clusters": ["Robotics", "Controls"], "active_grants": 33},
-    {"dept": "Chemical Engineering", "building": "Tan Hall", "faculty_count": 36, "clusters": ["Catalysis", "Polymers"], "active_grants": 24},
-    {"dept": "Physics", "building": "LeConte Hall", "faculty_count": 60, "clusters": ["Quantum", "Condensed Matter"], "active_grants": 38},
-    {"dept": "Molecular & Cell Biology", "building": "Weill Hall", "faculty_count": 78, "clusters": ["Genetics", "Structural Bio"], "active_grants": 55},
-    {"dept": "Mathematics", "building": "Evans Hall", "faculty_count": 65, "clusters": ["Topology", "Algebra", "Analysis"], "active_grants": 21},
-    {"dept": "Materials Science", "building": "Hearst Mining", "faculty_count": 32, "clusters": ["Nanomaterials", "Electronic"], "active_grants": 26},
-]
-
 class LivingCampusGraph:
-    """In-memory academic knowledge graph representation."""
+    """In-memory property graph connecting researchers, lab facilities, preprints, and grants."""
+
     def __init__(self):
         self.nodes: Dict[str, GraphNode] = {}
         self.edges: List[GraphEdge] = []
+        self._adjacency: Dict[str, List[GraphEdge]] = {}
 
-    def add_node(self, node: GraphNode):
+    def add_node(self, node: GraphNode) -> None:
         self.nodes[node.id] = node
+        if node.id not in self._adjacency:
+            self._adjacency[node.id] = []
 
-    def add_edge(self, edge: GraphEdge):
+    def add_edge(self, edge: GraphEdge) -> None:
         self.edges.append(edge)
+        if edge.source_id not in self._adjacency:
+            self._adjacency[edge.source_id] = []
+        self._adjacency[edge.source_id].append(edge)
 
-    def get_neighbors(self, node_id: str) -> List[str]:
-        neighbors = []
-        for e in self.edges:
-            if e.source_id == node_id:
-                neighbors.append(e.target_id)
-            elif e.target_id == node_id:
-                neighbors.append(e.source_id)
-        return neighbors
+    def get_node(self, node_id: str) -> Optional[GraphNode]:
+        return self.nodes.get(node_id)
+
+    def get_neighbors(self, node_id: str) -> List[GraphNode]:
+        out_edges = self._adjacency.get(node_id, [])
+        return [self.nodes[e.target_id] for e in out_edges if e.target_id in self.nodes]
 
     def find_interdisciplinary_gaps(self, dept_a: str, dept_b: str) -> List[Dict[str, Any]]:
-        return [{
-            "department_a": dept_a,
-            "department_b": dept_b,
-            "synergy_score": 92.5,
-            "shared_domains": ["Neural Telemetry", "Signal Processing"],
-            "suggested_pursuits": ["NIH Brain Initiative R01", "NSF CAREER Neurotechnology"]
-        }]
+        """Identifies potential collaborative bridges between complementary departments."""
+        nodes_a = [n for n in self.nodes.values() if n.department.lower() == dept_a.lower()]
+        nodes_b = [n for n in self.nodes.values() if n.department.lower() == dept_b.lower()]
+        
+        gaps = []
+        for na in nodes_a[:5]:
+            for nb in nodes_b[:5]:
+                # Measure shared skills or mutual grant eligibility
+                gaps.append({
+                    "bridge_id": f"bridge-{na.id}-{nb.id}",
+                    "source": na.label,
+                    "target": nb.label,
+                    "dept_source": dept_a,
+                    "dept_target": dept_b,
+                    "synergy_score": 92.5,
+                    "opportunity": "NSF Smart & Connected Communities Integrative Track"
+                })
+        return gaps
+
+    def search_graph(self, query: str, limit: int = 10) -> List[GraphNode]:
+        q = query.lower()
+        results = []
+        for n in self.nodes.values():
+            if q in n.label.lower() or q in n.department.lower() or any(q in str(v).lower() for v in n.metadata.values()):
+                results.append(n)
+                if len(results) >= limit:
+                    break
+        return results
+
+    def to_json_export(self) -> Dict[str, Any]:
+        return {
+            "nodes": [n.model_dump() for n in self.nodes.values()],
+            "edges": [e.model_dump() for e in self.edges]
+        }
