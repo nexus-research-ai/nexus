@@ -1,4 +1,9 @@
 from nexus_discovery.campus_graph import LivingCampusGraph, GraphNode, GraphEdge
+from nexus_discovery.matcher import CollaboratorMatcher, MatchProfile
+from nexus_funding.finder import FundingFinder
+from nexus_funding.tracker import PursuitTracker
+from nexus_intelligence.citation_auditor import CitationAuditor
+from nexus_contracts.models import GroundingSource
 
 def test_living_campus_graph():
     g = LivingCampusGraph()
@@ -13,3 +18,27 @@ def test_living_campus_graph():
     gaps = g.find_interdisciplinary_gaps("EECS", "Bioengineering")
     assert len(gaps) > 0
     assert gaps[0]["synergy_score"] == 92.5
+
+def test_collaborator_matcher():
+    matcher = CollaboratorMatcher()
+    u1 = MatchProfile(
+        user_id="u1",
+        name="Aria Malik",
+        department="EECS",
+        academic_role="MSCS Candidate",
+        offers_skills=["Differential Privacy", "PyTorch"],
+        needs_skills=["Clinical EEG Data"]
+    )
+    u2 = MatchProfile(
+        user_id="u2",
+        name="Jordan Lee",
+        department="Bioengineering",
+        academic_role="PhD Researcher",
+        offers_skills=["Clinical EEG Data", "Signal Processing"],
+        needs_skills=["Differential Privacy"]
+    )
+    match = matcher.evaluate_match(u1, u2)
+    assert match.compatibility_score >= 90
+    assert "Clinical EEG Data" in match.they_offer
+    assert "Differential Privacy" in match.you_offer
+
