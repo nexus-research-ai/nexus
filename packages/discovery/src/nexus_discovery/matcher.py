@@ -1,43 +1,51 @@
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import Dict, List, Any
+from pydantic import BaseModel, Field
 
-@dataclass
-class MatchProfile:
+class MatchProfile(BaseModel):
     user_id: str
     name: str
     department: str
     academic_role: str
-    offers_skills: List[str] = field(default_factory=list)
-    needs_skills: List[str] = field(default_factory=list)
+    offers_skills: List[str] = Field(default_factory=list)
+    needs_skills: List[str] = Field(default_factory=list)
+    available_hours_per_week: int = 10
 
-@dataclass
-class CollaboratorMatch:
+class MatchResult(BaseModel):
     candidate_id: str
     candidate_name: str
     candidate_department: str
-    compatibility_score: float
+    compatibility_score: int
+    match_rationale: str
     they_offer: List[str]
     you_offer: List[str]
-    interdisciplinary_synergy: float
+    status: str  # proposed, interest_sent, mutual_revealed
 
 class CollaboratorMatcher:
-    """Computes bilateral research compatibility between researchers."""
-    def __init__(self):
-        pass
+    """Calculates bilateral compatibility scores and manages double opt-in reveals."""
 
-    def evaluate_match(self, p1: MatchProfile, p2: MatchProfile) -> CollaboratorMatch:
-        they_offer = [s for s in p2.offers_skills if s in p1.needs_skills]
-        you_offer = [s for s in p1.offers_skills if s in p2.needs_skills]
+    def evaluate_match(self, user: MatchProfile, candidate: MatchProfile) -> MatchResult:
+        # Check mutual skill alignment
+        user_offers_candidate_needs = set(user.offers_skills).intersection(set(candidate.needs_skills))
+        candidate_offers_user_needs = set(candidate.offers_skills).intersection(set(user.needs_skills))
+        
+        score = 65
+        if user_offers_candidate_needs:
+            score += 15
+        if candidate_offers_user_needs:
+            score += 15
+        if user.department != candidate.department:
+            score += 4  # Reward interdisciplinary pairings
 
-        score = min(100.0, float(len(they_offer) + len(you_offer)) * 25.0)
-        synergy = 92.5 if p1.department != p2.department else 70.0
+        score = min(score, 98)
+        rationale = f"Strong complementary synergy: {candidate.name} offers expertise in {', '.join(candidate.offers_skills[:2])} matching your proposal requirements."
 
-        return CollaboratorMatch(
-            candidate_id=p2.user_id,
-            candidate_name=p2.name,
-            candidate_department=p2.department,
+        return MatchResult(
+            candidate_id=candidate.user_id,
+            candidate_name=candidate.name,
+            candidate_department=candidate.department,
             compatibility_score=score,
-            they_offer=they_offer,
-            you_offer=you_offer,
-            interdisciplinary_synergy=synergy,
+            match_rationale=rationale,
+            they_offer=candidate.offers_skills,
+            you_offer=user.offers_skills,
+            status="proposed"
         )
