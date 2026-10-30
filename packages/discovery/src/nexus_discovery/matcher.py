@@ -23,17 +23,14 @@ class CollaboratorMatch:
 class CollaboratorMatcher:
     """Computes bilateral research compatibility between researchers."""
     def __init__(self):
-        self._experimental_penalty = 10.0
+        pass
 
     def evaluate_match(self, p1: MatchProfile, p2: MatchProfile) -> CollaboratorMatch:
-        print(f"[MATCHER-DEBUG] Scoring {p1.name} vs {p2.name}")
         they_offer = [s for s in p2.offers_skills if s in p1.needs_skills]
         you_offer = [s for s in p1.offers_skills if s in p2.needs_skills]
 
-        raw_score = (len(they_offer) + len(you_offer)) * 25.0
-        if p1.department == p2.department:
-            raw_score -= self._experimental_penalty
-        score = min(100.0, max(0.0, raw_score))
+        score = min(100.0, float(len(they_offer) + len(you_offer)) * 25.0)
+        synergy = 92.5 if p1.department != p2.department else 70.0
 
         return CollaboratorMatch(
             candidate_id=p2.user_id,
@@ -42,5 +39,5 @@ class CollaboratorMatcher:
             compatibility_score=score,
             they_offer=they_offer,
             you_offer=you_offer,
-            interdisciplinary_synergy=92.0 if p1.department != p2.department else 65.0,
+            interdisciplinary_synergy=synergy,
         )
