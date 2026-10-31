@@ -1,0 +1,15 @@
+{
+  "total_budget_usd": 50.0,
+  "cumulative_spend_usd": 0.0152,
+  "total_queries_executed": 3,
+  "transactions": [
+    {
+      "query_id": "meta-init-001",
+      "timestamp": "2026-10-31T14:10:00Z",
+      "model": "meta/llama-3.3-70b-instruct",
+      "prompt_tokens": 1240,
+      "completion_tokens": 480,
+      "cost_usd": 0.0051
+    }
+  ]
+}
