@@ -1,39 +1,45 @@
-import os
 import json
 import urllib.request
-from typing import Dict, Any, Optional
+import os
+from typing import Optional, Dict, Any
 
-# Static mock completion dictionary
-MOCK_COMPLETIONS = {
-    "nsf_summary": "We propose a zero-knowledge confidential research pod architecture establishing provable information flow control across federated academic boundaries.",
-    "nsf_impacts": "The proposed research directly impacts privacy-preserving collaboration between universities, clinical hospitals, and national laboratories.",
-    "nih_aims": "Specific Aim 1: Validate differential privacy on multi-site clinical EEG arrays without compromising high-frequency biomarker fidelity.",
-    "nih_significance": "Overcoming institutional sharing friction enables unprecedented statistical power for rare neurological pathology detection.",
-    "doe_abstract": "High-throughput edge neural signal processing leveraging neuromorphic compute primitives under strict information-theoretic boundary constraints.",
-    "darpa_challenge": "Resilient decentralized synchronization of multi-agent academic intelligence swarms in adversarial zero-trust environments.",
-    "figure_caption": "Figure 1: Spatial manifold alignment of cross-cohort neural telemetry features using optimal transport with differential privacy guarantees.",
-    "default": "Synthesized scientific analysis with verified citation anchors and cryptographically audited provenance trail.",
-}
+class MetaMuseClient:
+    """Client for Meta AI Frontier Models (Muse Wonder 1.0 & Muse Spark 1.3).
+    
+    Correctly manages reasoning tokens and content extraction.
+    """
 
-class MetaClient:
-    """Client for Meta LLaMA 3.3 and Muse reasoning models."""
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("META_API_KEY", "")
-        self.endpoint = "https://api.meta.ai/v1/chat/completions"
+    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.meta.ai/v1"):
+        self.api_key = api_key or os.environ.get("MODEL_API_KEY") or os.environ.get("META_API_KEY")
+        self.base_url = base_url.rstrip("/")
 
-    def generate(self, prompt: str, max_tokens: int = 100, mock: bool = False) -> Dict[str, Any]:
-        if mock or not self.api_key:
-            reply = MOCK_COMPLETIONS.get("default", "")
-            return {
-                "text": reply,
-                "model": "meta/llama-3.3-70b-instruct",
-                "usage": {"prompt_tokens": len(prompt.split()), "completion_tokens": len(reply.split()), "cost_usd": 0.0005},
-            }
+    def complete(self, prompt: str, model: str = "muse-wonder-1.0", max_tokens: int = 2500, temperature: float = 0.2) -> Dict[str, Any]:
+        if not self.api_key:
+            raise ValueError("Meta API Key is required.")
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        # In Meta Muse models, effective tokens must accommodate both reasoning and generation
+        effective_tokens = max(max_tokens, 1500)
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": effective_tokens,
+            "temperature": temperature
+        }
+
         req = urllib.request.Request(
-            self.endpoint,
-            data=json.dumps({"prompt": prompt, "max_tokens": max_tokens}).encode("utf-8"),
-            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+            f"{self.base_url}/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers
         )
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            return {"text": data.get("content", ""), "usage": data.get("usage", {})}
+            choice = data["choices"][0]
+            return {
+                "text": choice["message"].get("content") or "",
+                "usage": data.get("usage", {}),
+                "finish_reason": choice.get("finish_reason")
+            }
