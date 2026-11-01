@@ -42,3 +42,17 @@ def test_collaborator_matcher():
     assert "Clinical EEG Data" in match.they_offer
     assert "Differential Privacy" in match.you_offer
 
+def test_citation_auditor():
+    auditor = CitationAuditor()
+    source = GroundingSource(
+        source_id="s1",
+        title="Optimal Transport for EEG Alignment",
+        authors="Li, Verma et al.",
+        year=2024,
+        abstract="We show optimal transport aligns neural telemetry across diverse cohorts without privacy loss.",
+        exact_quote="aligns neural telemetry across diverse cohorts without privacy loss",
+        confidence_score=0.96
+    )
+    res = auditor.audit_claim("Optimal transport achieves cross-cohort neural telemetry alignment.", [source])
+    assert res["status"] == "supported"
+    assert res["grounding_score"] >= 80
