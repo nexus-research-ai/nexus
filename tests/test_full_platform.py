@@ -56,3 +56,9 @@ def test_citation_auditor():
     res = auditor.audit_claim("Optimal transport achieves cross-cohort neural telemetry alignment.", [source])
     assert res["status"] == "supported"
     assert res["grounding_score"] >= 80
+
+def test_proposal_synthesizer_unit():
+    from nexus_intelligence.synthesizer import ProposalSynthesizer
+    synth = ProposalSynthesizer()
+    res = synth.synthesize("Brain Computer Interface", ["Aim 1", "Aim 2"])
+    assert "abstract" in res
