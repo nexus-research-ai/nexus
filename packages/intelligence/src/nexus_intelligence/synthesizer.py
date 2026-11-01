@@ -1,20 +1,28 @@
-from typing import List, Dict, Any, Optional
-from nexus_intelligence.citation_auditor import CitationAuditor
+from typing import List, Dict, Any
+from .meta_client import MetaMuseClient
+from nexus_contracts.models import GroundingSource, GrantProposal
 
 class ProposalSynthesizer:
-    """Iterative grant proposal section generator."""
-    def __init__(self, auditor: Optional[CitationAuditor] = None):
-        self.auditor = auditor or CitationAuditor()
+    """Autonomous grant synthesizer generating fully grounded NSF/NIH technical narratives."""
 
-    def synthesize(self, title: str, objectives: List[str]) -> Dict[str, Any]:
-        abstract = f"This project addresses {title} through {len(objectives)} key objectives."
-        audit_1 = self.auditor.audit_claim(abstract, [])
-        aims = [f"Aim {i+1}: {obj}" for i, obj in enumerate(objectives)]
-        audit_2 = self.auditor.audit_claim(aims[0] if aims else "", [])
+    def __init__(self, client: MetaMuseClient):
+        self.client = client
+
+    def synthesize_aims(self, proposal: GrantProposal, sources: List[GroundingSource]) -> Dict[str, Any]:
+        evidence_summary = "\n".join([f"- [{s.title} ({s.year})]: {s.exact_quote}" for s in sources[:4]])
+        prompt = f"""You are the Principal Investigator drafting Specific Aims for proposal: '{proposal.title}'.
+Agency: {proposal.target_agency}
+
+GROUNDING EVIDENCE:
+{evidence_summary}
+
+TASK:
+Write Section 2.1 Technical Narrative and Specific Aims 1 & 2.
+Every major claim MUST reference one of the provided grounding sources.
+"""
+        result = self.client.complete(prompt, model="muse-spark-1.3", max_tokens=2000)
         return {
-            "title": title,
-            "abstract": abstract,
-            "specific_aims": aims,
-            "audit_trail": [audit_1, audit_2],
-            "readiness_score": 85,
+            "narrative": result["text"],
+            "sources_used": [s.source_id for s in sources[:4]],
+            "tokens": result["usage"].get("total_tokens", 0)
         }
