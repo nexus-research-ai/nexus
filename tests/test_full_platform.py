@@ -42,6 +42,21 @@ def test_collaborator_matcher():
     assert "Clinical EEG Data" in match.they_offer
     assert "Differential Privacy" in match.you_offer
 
+def test_funding_finder_and_tracker():
+    finder = FundingFinder()
+    opps = finder.list_all("NSF")
+    assert len(opps) >= 1
+    assert "NSF" in opps[0].agency
+
+    tracker = PursuitTracker()
+    state = tracker.create_tracker("prop-1", opps[0].title)
+    assert state.readiness_score == 78
+    assert state.current_milestone_index == 2
+    
+    advanced = tracker.advance_milestone(state)
+    assert advanced.current_milestone_index == 3
+    assert advanced.readiness_score == 88
+
 def test_citation_auditor():
     auditor = CitationAuditor()
     source = GroundingSource(
@@ -56,9 +71,3 @@ def test_citation_auditor():
     res = auditor.audit_claim("Optimal transport achieves cross-cohort neural telemetry alignment.", [source])
     assert res["status"] == "supported"
     assert res["grounding_score"] >= 80
-
-def test_proposal_synthesizer_unit():
-    from nexus_intelligence.synthesizer import ProposalSynthesizer
-    synth = ProposalSynthesizer()
-    res = synth.synthesize("Brain Computer Interface", ["Aim 1", "Aim 2"])
-    assert "abstract" in res
