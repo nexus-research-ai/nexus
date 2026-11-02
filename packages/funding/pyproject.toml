@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nexus-funding"
+version = "0.1.0"
+description = "Funding Opportunity Intelligence & Pursuit Tracker for Nexus"
+requires-python = ">=3.12"
+dependencies = [
+    "nexus-contracts",
+    "pydantic>=2.9.0"
+]
