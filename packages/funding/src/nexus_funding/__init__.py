@@ -1,2 +1,4 @@
-"""Nexus Funding: Federal agency solicitations and pursuit milestone tracking."""
-__version__ = "0.1.0-alpha"
+"""Nexus funding, opportunity intelligence, and pursuit tracking."""
+from .finder import FundingFinder, FundingOpportunity
+from .tracker import PursuitTracker, PursuitState, MilestoneStatus
+from .compliance import SolicitationComplianceChecker, ComplianceReport, ComplianceRule
