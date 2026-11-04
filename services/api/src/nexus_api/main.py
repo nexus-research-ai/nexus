@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import vault_router, discovery_router, funding_router, intelligence_router
@@ -8,9 +9,12 @@ app = FastAPI(
     description="Federated scientific collaboration, zero-knowledge hypothesis vaults, and autonomous grant synthesis."
 )
 
+allowed_origins_env = os.getenv("NEXUS_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,4 +37,5 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("nexus_api.main:app", host="0.0.0.0", port=8000, reload=True)
+    reload_flag = os.getenv("NEXUS_RELOAD", "false").lower() == "true"
+    uvicorn.run("nexus_api.main:app", host="0.0.0.0", port=8000, reload=reload_flag)
