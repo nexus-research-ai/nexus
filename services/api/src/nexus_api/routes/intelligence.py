@@ -1,13 +1,17 @@
 from fastapi import APIRouter
-from typing import Dict, Any
+from pydantic import BaseModel
+from typing import List, Dict, Any
+from nexus_intelligence.citation_auditor import CitationAuditor
+from nexus_contracts.models import GroundingSource
 
 router = APIRouter()
+auditor = CitationAuditor()
 
-MOCK_PAYLOADS = {
-    "status": "ok",
-    "sample_records": [{"id": 1, "title": "Mock Record"}],
-}
+class ClaimAuditRequest(BaseModel):
+    claim_text: str
+    sources: List[GroundingSource]
 
-@router.get("/")
-def get_root():
-    return MOCK_PAYLOADS
+@router.post("/audit-claim")
+def audit_claim(req: ClaimAuditRequest):
+    res = auditor.audit_claim(req.claim_text, req.sources)
+    return res
