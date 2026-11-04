@@ -1,25 +1,3 @@
-// Initial UI prototype mock fixtures (refactored to state hooks)
-const _DRAFT_INITIAL_PAPERS = [
-  { id: "p1", title: "Differential Privacy in Brain-Computer Interfaces", author: "Aria Malik et al.", year: 2024, tier: "PUBLIC", citations: 42, score: 96 },
-  { id: "p2", title: "Optimal Transport for Neural Telemetry Alignment", author: "Dr. Vasquez et al.", year: 2024, tier: "SHARED", citations: 29, score: 94 },
-  { id: "p3", title: "Information Flow Control in Distributed Scientific Workflows", author: "Nexus Architecture Lab", year: 2025, tier: "SHARED", citations: 18, score: 91 },
-  { id: "p4", title: "Cryo-EM Manifold Density Estimation", author: "Bioengineering Consortium", year: 2024, tier: "PUBLIC", citations: 65, score: 89 },
-  { id: "p5", title: "Multi-Agent Verifiable Consensus in Zero-Trust Research Enclaves", author: "Malik & Lee", year: 2026, tier: "CONFIDENTIAL", citations: 12, score: 98 },
-];
-
-const _DRAFT_INITIAL_PURSUITS = [
-  { id: "pursuit-1", title: "NSF Neuromorphic Computing CAREER", deadline: "Nov 18, 2026", readiness: 78, lead: "Aria Malik", agency: "NSF" },
-  { id: "pursuit-2", title: "NIH BRAIN Initiative Telemetry R01", deadline: "Dec 04, 2026", readiness: 65, lead: "Dr. Vasquez", agency: "NIH" },
-  { id: "pursuit-3", title: "DARPA Zero-Knowledge Enclaves BAA", deadline: "Jan 15, 2027", readiness: 42, lead: "Jordan Lee", agency: "DARPA" },
-  { id: "pursuit-4", title: "DOE ASCR Privacy-Preserving Analytics", deadline: "Jan 28, 2027", readiness: 55, lead: "Consortium Team", agency: "DOE" },
-];
-
-const _DRAFT_CAMPUS_HUBS = [
-  { dept: "EECS", building: "Cory Hall", matches: 14, synergy: 94.2 },
-  { dept: "Bioengineering", building: "Stanley Hall", matches: 9, synergy: 91.8 },
-  { dept: "Neuroscience", building: "Barker Hall", matches: 7, synergy: 88.5 },
-  { dept: "Statistics", building: "Evans Hall", matches: 6, synergy: 85.0 },
-];
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
