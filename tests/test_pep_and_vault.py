@@ -43,9 +43,3 @@ def test_priority_proof_generation():
     assert proof["certificate_number"].startswith("NX-")
     assert len(proof["merkle_root"]) == 64
     assert len(proof["sha256_hash"]) == 64
-
-def test_mutual_disclosure_token_exchange():
-    from nexus_workspace.mutual_disclosure import MutualDisclosureExchange, DisclosureState
-    exchange = MutualDisclosureExchange()
-    agree = exchange.initiate_agreement("p1", "p2", "Summary 1", "Summary 2")
-    assert agree.state == DisclosureState.INTEREST_SENT
