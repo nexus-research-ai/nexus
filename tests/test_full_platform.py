@@ -84,3 +84,20 @@ def test_funding_compliance_darpa():
     # Exceeding page limit should fail readiness
     overlength_report = checker.audit_proposal("DARPA", {"narrative": "DoD operational transition"}, page_count=10)
     assert overlength_report.ready_for_submission is False
+
+import os
+
+def test_campus_graph_dataset_and_query():
+    g = LivingCampusGraph()
+    dataset_path = '/Users/anurag/Startups/nexus/data/nexus_full_graph.json'
+    if os.path.exists(dataset_path):
+        assert g.load_dataset(dataset_path) is True
+        res = g.query_graph(limit=50)
+        assert len(res['nodes']) == 50
+        assert len(res['links']) > 0
+
+        # Test ego network
+        topic_node = res['nodes'][0]['id']
+        ego_res = g.query_graph(limit=50, center_id=topic_node, hops=2)
+        assert ego_res['center_node'] is not None
+        assert ego_res['center_node']['id'] == topic_node

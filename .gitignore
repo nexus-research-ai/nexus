@@ -7,3 +7,15 @@ __pycache__/
 *.egg-info/
 node_modules/
 .next/
+
+# Data and local storage (never commit bulk corpora, PDFs, databases, or runtime caches)
+data/
+
+# Local databases, caches, and runtime volumes
+*.db
+*.sqlite
+*.sqlite3
+.cache/
+runtime-work/
+logs/
+

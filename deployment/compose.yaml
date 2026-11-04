@@ -1,0 +1,73 @@
+name: nexus
+
+services:
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: nexus-proxy-1
+    ports:
+      - "127.0.0.1:${NEXUS_HTTP_PORT:-8088}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+      - web
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: deployment/api.Dockerfile
+    image: nexus-api:latest
+    container_name: nexus-api-1
+    environment:
+      NEXUS_PROFILE: ${NEXUS_PROFILE:-development}
+      NEXUS_DB_HOST: db
+      NEXUS_DB_PORT: "5432"
+      NEXUS_DB_NAME: nexus
+      NEXUS_DB_USER: nexus
+      NEXUS_DB_PASSWORD: ${NEXUS_DB_PASSWORD:-nexus_dev_password}
+      NEXUS_GRAPH_DATA: /app/data/nexus_full_graph.json
+      META_API_KEY: ${META_API_KEY:-}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+    volumes:
+      - "../data/nexus_full_graph.json:/app/data/nexus_full_graph.json:ro"
+      - "../data/pdfs:/app/data/pdfs:ro"
+      - "../data/papers:/app/data/papers:ro"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: deployment/web.Dockerfile
+    image: nexus-web:latest
+    container_name: nexus-web-1
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: nexus-db-1
+    environment:
+      POSTGRES_DB: nexus
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: ${NEXUS_DB_PASSWORD:-nexus_dev_password}
+    ports:
+      - "127.0.0.1:${NEXUS_DB_PORT:-5438}:5432"
+    volumes:
+      - nexus-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  nexus-postgres-data:

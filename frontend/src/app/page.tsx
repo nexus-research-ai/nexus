@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import GraphViewer from "@/components/GraphViewer"
 
 export type View = "home" | "campus" | "vault" | "pod" | "proof"
 export const mainNavKeys: View[] = ["home", "vault", "pod", "proof"]
@@ -3820,74 +3821,12 @@ export function ProductOverlay({
         )}
 
         {overlay === "graph" && (
-          <div className="graph-workspace">
-            <div className="graph-toolbar">
-              <label>
-                <Icon name="search" />
-                <input placeholder="Search people, topics, or papers in graph..." />
-              </label>
-              {["All campus", "People", "Projects", "Papers"].map((tab) => (
-                <button
-                  key={tab}
-                  className={graphFilter === tab ? "active" : ""}
-                  onClick={() => {
-                    setGraphFilter(tab)
-                    showToast(`Graph filtered by: ${tab}`)
-                  }}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-            <div className="graph-main">
-              <div className="graph-canvas">
-                <svg viewBox="0 0 800 520" aria-label="Research graph">
-                  <g stroke="#bfd0df" strokeWidth="1.2">
-                    <path d="M150 190 350 110 520 180 650 95M150 190 280 330 470 360 650 95M350 110 470 360M520 180 280 330M470 360 680 390M280 330 120 410" />
-                  </g>
-                  {[
-                    [150, 190, 32, "#0a66c2", "Federated Learning", "EECS"],
-                    [350, 110, 27, "#6755a6", "EEG Telemetry", "Neuroscience"],
-                    [520, 180, 36, "#2d8067", "Neural Decoding", "Helen Wills"],
-                    [650, 95, 23, "#a46d27", "Mobile Hardware", "Bioengineering"],
-                    [280, 330, 34, "#0a66c2", "Differential Privacy", "EECS"],
-                    [470, 360, 29, "#6755a6", "Sleep Staging", "Clinical Precision"],
-                  ].map(([cx, cy, r, fill, label, dept], idx) => (
-                    <g
-                      key={idx}
-                      className="graph-node"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => setSelectedNode({ label: String(label), dept: String(dept), papers: 8 + idx * 3 })}
-                    >
-                      <circle cx={Number(cx)} cy={Number(cy)} r={Number(r)} fill={String(fill)} opacity=".92" />
-                      <circle cx={Number(cx)} cy={Number(cy)} r={Number(r) + 7} fill="none" stroke={String(fill)} opacity=".2" />
-                      <text x={Number(cx)} y={Number(cy) + 4} textAnchor="middle" fill="#fff" fontSize={10} fontWeight={600}>
-                        {String(label).split(" ")[0]}
-                      </text>
-                    </g>
-                  ))}
-                </svg>
-              </div>
-              <aside className="graph-inspector">
-                <h3>{selectedNode ? selectedNode.label : "Knowledge Gap Found"}</h3>
-                <Tag tone="stage">{selectedNode ? selectedNode.dept : "CROSS-DISCIPLINARY OPPORTUNITY"}</Tag>
-                <p style={{ margin: "10px 0", fontSize: 12, lineHeight: 1.5, color: "var(--muted)" }}>
-                  {selectedNode
-                    ? `Connected across ${selectedNode.papers} indexed publications and 3 active Berkeley research pods.`
-                    : "No lab in EECS is currently paired with Helen Wills EEG Mobile Rig despite 14 overlapping citations on latent alignment."}
-                </p>
-                <button
-                  className="accent-button"
-                  style={{ width: "100%", justifyContent: "center" }}
-                  onClick={() => {
-                    onClose()
-                    onNavigate("campus")
-                  }}
-                >
-                  Bridge this gap on Campus <Icon name="arrow" />
-                </button>
-              </aside>
-            </div>
+          <div style={{ height: "calc(min(860px, 96vh) - 76px)", display: "flex", flexDirection: "column", position: "relative" }}>
+            <GraphViewer
+              onSearchTopic={(topic) => {
+                showToast(`Filtered campus graph for: ${topic}`)
+              }}
+            />
           </div>
         )}
 
