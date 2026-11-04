@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
-export type View = "home" | "campus" | "vault" | "pod" | "proof"
-export const mainNavKeys: View[] = ["home", "vault", "pod", "proof"]
+export type View = "home" | "campus" | "literature" | "vault" | "pod" | "proof" | "graph"
+export const mainNavKeys: View[] = ["home", "campus", "literature", "vault", "graph"]
 export type Overlay =
   | "reveal"
   | "verify"
@@ -317,14 +317,24 @@ export const viewMeta: Record<View, {
     subtitle: "Your research feed",
   },
   campus: {
-    label: "Campus",
+    label: "Find Collaborators",
+    icon: "users",
+    subtitle: "Match with campus researchers",
+  },
+  literature: {
+    label: "Literature Search",
     icon: "search",
-    subtitle: "Explore campus projects",
+    subtitle: "Search peer-reviewed papers and sources",
   },
   vault: {
     label: "Vault",
     icon: "shield",
     subtitle: "Prove and share safely",
+  },
+  graph: {
+    label: "Knowledge Graph",
+    icon: "graph",
+    subtitle: "Explore topics, authors, and gaps",
   },
   pod: {
     label: "Pod",
@@ -909,6 +919,7 @@ export function AppFrame({
   showToast,
   openProfile,
   openCharter,
+  onLogout,
 }: {
   view: View
   setView: (view: View) => void
@@ -918,8 +929,8 @@ export function AppFrame({
   showToast: (msg: string) => void
   openProfile: () => void
   openCharter: () => void
+  onLogout: () => void
 }) {
-  const [toolsOpen, setToolsOpen] = useState(false)
   const [alertsOpen, setAlertsOpen] = useState(false)
   const [meOpen, setMeOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -977,7 +988,7 @@ export function AppFrame({
   }, [searchQuery])
 
   return (
-    <div className="app-shell" onClick={() => { setAlertsOpen(false); setMeOpen(false); setToolsOpen(false); }}>
+    <div className="app-shell" onClick={() => { setAlertsOpen(false); setMeOpen(false); }}>
       <header className="global-header" onClick={(e) => e.stopPropagation()}>
         <button
           className="wordmark"
@@ -1021,7 +1032,8 @@ export function AppFrame({
                       if (item.view === "proof") setView("proof")
                       else if (item.view === "vault") setView("vault")
                       else if (item.view === "pod") setView("pod")
-                      else if (item.view === "graph") openOverlay("graph")
+                      else if (item.view === "graph") setView("graph")
+                      else if (item.view === "literature") setView("literature")
                       else setView("campus")
                     }}
                   >
@@ -1041,9 +1053,7 @@ export function AppFrame({
           {mainNavKeys.map((key) => (
             <button
               key={key}
-              className={
-                view === key || (key === "home" && view === "campus") ? "active" : ""
-              }
+              className={view === key ? "active" : ""}
               onClick={() => setView(key)}
             >
               <span className="continuum-icon">
@@ -1057,97 +1067,14 @@ export function AppFrame({
         </nav>
 
         <div className="header-actions">
-          <div className="tools-anchor">
-            <button
-              className={`header-nav-button ${toolsOpen ? "active" : ""}`}
-              onClick={() => {
-                setToolsOpen(!toolsOpen)
-                setAlertsOpen(false)
-                setMeOpen(false)
-              }}
-            >
-              <Icon name="graph" size={18} />
-              <span>Tools</span>
-            </button>
-            {toolsOpen && (
-              <div className="tools-menu">
-                <button
-                  onClick={() => {
-                    setView("campus")
-                    setToolsOpen(false)
-                  }}
-                >
-                  <span className="tool-menu-icon blue">
-                    <Icon name="users" />
-                  </span>
-                  <span>
-                    <b>Find collaborators</b>
-                    <small>1,284 campus researchers matched</small>
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setView("proof")
-                    setToolsOpen(false)
-                  }}
-                >
-                  <span className="tool-menu-icon green">
-                    <Icon name="book" />
-                  </span>
-                  <span>
-                    <b>Literature search</b>
-                    <small>Search and inspect verified papers</small>
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    openOverlay("graph")
-                    setToolsOpen(false)
-                  }}
-                >
-                  <span className="tool-menu-icon violet">
-                    <Icon name="graph" />
-                  </span>
-                  <span>
-                    <b>Knowledge graph</b>
-                    <small>Explore topics, authors, and gaps</small>
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    onTelemetry()
-                    setToolsOpen(false)
-                  }}
-                >
-                  <span className="tool-menu-icon gold">
-                    <Icon name="message" />
-                  </span>
-                  <span>
-                    <b>Ask the literature</b>
-                    <small>Get answers grounded in your library</small>
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    openOverlay("funding")
-                    setToolsOpen(false)
-                  }}
-                >
-                  <span className="tool-menu-icon teal">
-                    <Icon name="pin" />
-                  </span>
-                  <span>
-                    <b>Funding finder</b>
-                    <small>Find grants that fit your work</small>
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
+          <button className="header-nav-button" onClick={() => openOverlay("funding")}>
+            <Icon name="pin" size={18} />
+            <span>Funding</span>
+          </button>
 
           <button className="header-nav-button" onClick={() => onTelemetry()}>
             <Icon name="message" size={18} />
-            <span>Messages</span>
+            <span>Nexus AI</span>
           </button>
 
           <div className="popover-container">
@@ -1156,7 +1083,6 @@ export function AppFrame({
               aria-label="Notifications"
               onClick={() => {
                 setAlertsOpen(!alertsOpen)
-                setToolsOpen(false)
                 setMeOpen(false)
               }}
             >
@@ -1193,16 +1119,14 @@ export function AppFrame({
 
           <div className="popover-container">
             <button
-              className={`me-button ${meOpen ? "active" : ""}`}
+              className={`me-button me-button-round ${meOpen ? "active" : ""}`}
+              aria-label="Account menu"
               onClick={() => {
                 setMeOpen(!meOpen)
-                setToolsOpen(false)
                 setAlertsOpen(false)
               }}
             >
               <Avatar initials="AM" color="gold" active />
-              <span>Me</span>
-              <Icon name="chevron" size={11} />
             </button>
 
             {meOpen && (
@@ -1265,6 +1189,16 @@ export function AppFrame({
                   >
                     <Icon name="check" size={16} />
                     <span>Directory sync status: Healthy</span>
+                  </button>
+                  <button
+                    className="me-menu-item"
+                    onClick={() => {
+                      setMeOpen(false)
+                      onLogout()
+                    }}
+                  >
+                    <Icon name="arrow" size={16} />
+                    <span>Log out</span>
                   </button>
                 </div>
               </div>
@@ -2060,6 +1994,355 @@ export function VaultView({
   )
 }
 
+// --- AUTH VIEW ---
+
+export function AuthView({ onLogin }: { onLogin: () => void }) {
+  const [mode, setMode] = useState<"login" | "signup">("login")
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (mode === "signup" && !name.trim()) {
+      setError("Enter your full name to sign up.")
+      return
+    }
+    if (!email.trim() || !password.trim()) {
+      setError("Enter an email and password to continue.")
+      return
+    }
+    if (password.trim().length < 4) {
+      setError("Password must be at least 4 characters.")
+      return
+    }
+    setError("")
+    onLogin()
+  }
+
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+          <div className="wordmark"><NexusLogo /></div>
+        </div>
+        <h1 style={{ textAlign: "center" }}>{mode === "login" ? "Log in to Nexus" : "Create your Nexus account"}</h1>
+        <p style={{ textAlign: "center" }}>{mode === "login" ? "Welcome back. Enter your details to continue." : "Join the campus research network."}</p>
+        <form onSubmit={submit}>
+          {mode === "signup" && (
+            <div className="auth-field">
+              <label>FULL NAME</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Aria Malik" />
+            </div>
+          )}
+          <div className="auth-field">
+            <label>EMAIL</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@berkeley.edu" />
+          </div>
+          <div className="auth-field">
+            <label>PASSWORD</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          </div>
+          {error && <p className="auth-error">{error}</p>}
+          <button type="submit" className="accent-button" style={{ width: "100%", justifyContent: "center" }}>
+            {mode === "login" ? "Log in" : "Sign up"}
+          </button>
+        </form>
+        <div className="auth-switch">
+          {mode === "login" ? (
+            <>No account? <button onClick={() => setMode("signup")}>Sign up</button></>
+          ) : (
+            <>Already have an account? <button onClick={() => setMode("login")}>Log in</button></>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// --- LITERATURE SEARCH VIEW ---
+
+type LiteratureResult = {
+  id: string
+  title: string
+  authors: string[]
+  department: string
+  snippet: string
+  text: string
+  origin: string
+  score: number
+  reason: string
+}
+
+export function LiteratureView({
+  setView,
+  showToast,
+}: {
+  setView: (view: View) => void
+  showToast: (msg: string) => void
+}) {
+  const [query, setQuery] = useState("")
+  const [results, setResults] = useState<LiteratureResult[]>([])
+  const [loading, setLoading] = useState(false)
+  const [searched, setSearched] = useState(false)
+  const [openPaper, setOpenPaper] = useState<LiteratureResult | null>(null)
+  const [shortlisted, setShortlisted] = useState<Record<string, boolean>>({})
+
+  const runSearch = useCallback(async (q: string) => {
+    if (!q.trim()) return
+    setLoading(true)
+    setSearched(true)
+    try {
+      const res = await fetch(`/api/v1/literature/search?q=${encodeURIComponent(q.trim())}&limit=10`)
+      const data = await res.json()
+      setResults(data.items || [])
+    } catch {
+      showToast("Couldn't reach the literature search service")
+      setResults([])
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
+
+  return (
+    <div className="view literature-view">
+      <div style={{ marginBottom: 16 }}>
+        <button
+          className="text-button"
+          onClick={() => setView("home")}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}
+        >
+          <Icon name="arrow" /> Back to Research Feed
+        </button>
+      </div>
+
+      <section style={{ marginBottom: 20 }}>
+        <h1 style={{ margin: "0 0 6px", fontSize: 26 }}>Literature & Evidence Search</h1>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 14 }}>
+          Search peer-reviewed papers and researcher sources across the sample research corpus.
+        </p>
+      </section>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          runSearch(query)
+        }}
+        className="search-field"
+        style={{ marginBottom: 20 }}
+      >
+        <Icon name="search" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search research topics, keywords, authors…"
+        />
+        <button type="submit" className="accent-button" disabled={loading}>
+          {loading ? "Searching…" : "Search"}
+        </button>
+      </form>
+
+      {searched && !loading && results.length === 0 && (
+        <p style={{ color: "var(--muted)", fontSize: 13 }}>No matches in the sample corpus. Try different terms.</p>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {results.map((paper) => (
+          <article key={paper.id} className="feed-card clean-card">
+            <header className="feed-card-header">
+              <Tag tone="stage">Paper</Tag>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>Sample corpus</span>
+            </header>
+            <div style={{ padding: "4px 15px 12px", boxSizing: "border-box", overflowWrap: "break-word", wordBreak: "break-word" }}>
+              <h2 style={{ margin: "0 0 6px", fontSize: 17 }}>{paper.title}</h2>
+              <p style={{ margin: "0 0 8px", fontSize: 13, color: "var(--muted)" }}>
+                {paper.authors.join(", ")} · {paper.department}
+              </p>
+              <p style={{ margin: "0 0 10px", fontSize: 13, lineHeight: 1.5 }}>{paper.snippet}…</p>
+              <p style={{ margin: 0, fontSize: 11.5, color: "#0a66c2" }}>{paper.reason}</p>
+            </div>
+            <footer className="feed-card-actions">
+              <button onClick={() => setOpenPaper(paper)}>
+                <Icon name="book" /> Read full text
+              </button>
+              <button
+                className={shortlisted[paper.id] ? "connected" : ""}
+                onClick={() => {
+                  setShortlisted((prev) => ({ ...prev, [paper.id]: !prev[paper.id] }))
+                  showToast(shortlisted[paper.id] ? "Removed from shortlist" : "Added to shortlist")
+                }}
+              >
+                <Icon name={shortlisted[paper.id] ? "check" : "pin"} /> {shortlisted[paper.id] ? "Shortlisted" : "Shortlist"}
+              </button>
+              <button onClick={() => showToast(`Attached "${paper.title}" to your proposal`)}>
+                <Icon name="plus" /> Attach to Proposal
+              </button>
+            </footer>
+          </article>
+        ))}
+      </div>
+
+      {openPaper && (
+        <div className="modal-backdrop" onClick={() => setOpenPaper(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>{openPaper.title}</h3>
+              <button className="icon-button" onClick={() => setOpenPaper(null)}><Icon name="close" /></button>
+            </div>
+            <div className="modal-body" style={{ overflowWrap: "break-word", wordBreak: "break-word" }}>
+              <p style={{ fontSize: 12, color: "var(--muted)" }}>{openPaper.authors.join(", ")} · {openPaper.department}</p>
+              <p style={{ fontSize: 13, lineHeight: 1.6 }}>{openPaper.text}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// --- KNOWLEDGE GRAPH VIEW ---
+
+type GraphNode = { id: string; label: string; type: string; department?: string }
+type GraphEdge = { source: string; target: string; relation: string }
+
+export function GraphView({
+  setView,
+  showToast,
+}: {
+  setView: (view: View) => void
+  showToast: (msg: string) => void
+}) {
+  const [nodes, setNodes] = useState<GraphNode[]>([])
+  const [edges, setEdges] = useState<GraphEdge[]>([])
+  const [clusters, setClusters] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
+  const [typeFilter, setTypeFilter] = useState<"all" | "paper" | "researcher" | "topic">("all")
+  const [selected, setSelected] = useState<GraphNode | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    fetch("/api/v1/literature/graph")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        setNodes(data.nodes || [])
+        setEdges(data.edges || [])
+        setClusters(data.clusters || {})
+      })
+      .catch(() => {
+        if (!cancelled) showToast("Couldn't reach the knowledge graph service")
+      })
+      .finally(() => !cancelled && setLoading(false))
+    return () => {
+      cancelled = true
+    }
+  }, [showToast])
+
+  const visibleNodes = useMemo(
+    () => (typeFilter === "all" ? nodes : nodes.filter((n) => n.type === typeFilter)),
+    [nodes, typeFilter]
+  )
+
+  const colorFor = (type: string) => (type === "paper" ? "#0a66c2" : type === "researcher" ? "#2d8067" : "#a46d27")
+
+  const laidOut = useMemo(() => {
+    const cx = 400
+    const cy = 260
+    const radius = 210
+    return visibleNodes.map((n, i) => {
+      const angle = (i / Math.max(visibleNodes.length, 1)) * Math.PI * 2
+      return { ...n, x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) }
+    })
+  }, [visibleNodes])
+
+  const posById = useMemo(() => {
+    const map = new Map<string, { x: number; y: number }>()
+    laidOut.forEach((n) => map.set(n.id, { x: n.x, y: n.y }))
+    return map
+  }, [laidOut])
+
+  return (
+    <div className="view">
+      <div style={{ marginBottom: 16 }}>
+        <button
+          className="text-button"
+          onClick={() => setView("home")}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}
+        >
+          <Icon name="arrow" /> Back to Research Feed
+        </button>
+      </div>
+
+      <div
+        className="graph-workspace"
+        style={{ height: "auto", minHeight: "78vh", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden" }}
+      >
+        <div className="graph-toolbar">
+          <span style={{ fontWeight: 700 }}>
+            Knowledge Graph <small style={{ fontWeight: 400, color: "var(--muted)" }}>
+              {nodes.length} nodes · {edges.length} edges
+            </small>
+          </span>
+          {(["all", "researcher", "paper", "topic"] as const).map((tab) => (
+            <button
+              key={tab}
+              className={typeFilter === tab ? "active" : ""}
+              onClick={() => setTypeFilter(tab)}
+            >
+              {tab === "all" ? `All (${nodes.length})` : `${tab[0].toUpperCase()}${tab.slice(1)}s (${clusters[tab + "s"] ?? 0})`}
+            </button>
+          ))}
+        </div>
+        <div className="graph-main">
+          <div className="graph-canvas">
+            {loading ? (
+              <p style={{ padding: 24, color: "var(--muted)" }}>Loading graph…</p>
+            ) : (
+              <svg viewBox="0 0 800 520" aria-label="Research knowledge graph">
+                <g stroke="#bfd0df" strokeWidth="1" opacity={0.5}>
+                  {edges
+                    .filter((e) => posById.has(e.source) && posById.has(e.target))
+                    .map((e, idx) => {
+                      const a = posById.get(e.source)!
+                      const b = posById.get(e.target)!
+                      return <line key={idx} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+                    })}
+                </g>
+                {laidOut.map((n) => (
+                  <g key={n.id} className="graph-node" style={{ cursor: "pointer" }} onClick={() => setSelected(n)}>
+                    <circle cx={n.x} cy={n.y} r={n.type === "paper" ? 20 : n.type === "researcher" ? 16 : 12} fill={colorFor(n.type)} opacity={0.92} />
+                    <text x={n.x} y={n.y + 4} textAnchor="middle" fill="#fff" fontSize={9} fontWeight={600}>
+                      {n.label.split(" ")[0].slice(0, 8)}
+                    </text>
+                  </g>
+                ))}
+              </svg>
+            )}
+          </div>
+          <aside className="graph-inspector">
+            <h3>{selected ? selected.label : "Select a node"}</h3>
+            <Tag tone="stage">{selected ? selected.type : "overview"}</Tag>
+            <p style={{ margin: "10px 0", fontSize: 12, lineHeight: 1.5, color: "var(--muted)" }}>
+              {selected
+                ? `${selected.type === "paper" ? "Paper" : selected.type === "researcher" ? "Researcher" : "Topic"} node${selected.department ? ` · ${selected.department}` : ""}. Connected via ${edges.filter((e) => e.source === selected.id || e.target === selected.id).length} edges.`
+                : "Click a node to inspect it, or use Literature Search to search the underlying papers directly."}
+            </p>
+            <button
+              className="accent-button"
+              style={{ width: "100%", justifyContent: "center" }}
+              onClick={() => setView("literature")}
+            >
+              Open Literature Search <Icon name="arrow" />
+            </button>
+          </aside>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // --- CAMPUS DISCOVERY VIEW ---
 
 export function CampusView({
@@ -2150,8 +2433,8 @@ export function CampusView({
         <button
           className="filter-pill"
           onClick={() => {
-            openOverlay("graph")
-            showToast("Opening Knowledge Graph Gap Explorer")
+            setView("graph")
+            showToast("Opening Knowledge Graph")
           }}
         >
           <Icon name="filter" /> Refine
@@ -2290,14 +2573,6 @@ export function CampusView({
               <Icon name="lock" size={12} /> Identity and work reveal only after both accept
             </small>
           </article>
-          <button className="graph-glimpse" onClick={() => openOverlay("graph")}>
-            <span>
-              <Icon name="graph" />
-              <b>Explore knowledge graph</b>
-              <small>13 cross-department gaps found</small>
-            </span>
-            <Icon name="arrow" />
-          </button>
           <button className="seal-prompt" onClick={() => setView("vault")}>
             <span>
               <Icon name="shield" />
@@ -2325,6 +2600,8 @@ export function HomeView({
   openSaved,
   openComposer,
   openCharter,
+  newPosts,
+  onDeletePost,
 }: {
   setView: (view: View) => void
   openOverlay: (overlay: Overlay) => void
@@ -2336,6 +2613,8 @@ export function HomeView({
   openSaved: () => void
   openComposer: () => void
   openCharter: () => void
+  newPosts: any[]
+  onDeletePost: (id: string) => void
 }) {
   const [connected, setConnected] = useState(false)
   const [followingProject, setFollowingProject] = useState(false)
@@ -2343,7 +2622,6 @@ export function HomeView({
   const [followingPeople, setFollowingPeople] = useState<Record<string, boolean>>({})
 
   // Dropdown states
-  const [matchMenuOpen, setMatchMenuOpen] = useState(false)
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const [peopleMenuOpen, setPeopleMenuOpen] = useState(false)
 
@@ -2374,7 +2652,6 @@ export function HomeView({
     <div
       className="home-view"
       onClick={() => {
-        setMatchMenuOpen(false)
         setProjectMenuOpen(false)
         setPeopleMenuOpen(false)
       }}
@@ -2468,6 +2745,61 @@ export function HomeView({
             </button>
           </div>
 
+          {newPosts.map((post, idx) => (
+            <article className="feed-card clean-card project-post" key={post.id ?? idx}>
+              <header className="feed-card-header">
+                <Avatar initials={(post.author || "You").split(" ").map((n: string) => n[0]).join("").slice(0, 2)} color="gold" active />
+                <div>
+                  <strong>{post.author || "You"}</strong>
+                  <span>{post.dept} · Posted a project · {post.time || "Just now"}</span>
+                </div>
+                <button
+                  className="icon-button"
+                  title="Delete post"
+                  onClick={() => {
+                    onDeletePost(post.id)
+                    showToast("Post deleted")
+                  }}
+                >
+                  <Icon name="close" size={14} />
+                </button>
+              </header>
+              <div className="project-post-copy">
+                <div className="project-post-panel">
+                  <span className="project-post-art">
+                    <Icon name="spark" size={36} />
+                  </span>
+                  <div>
+                    <Tag tone="stage">{post.stage}</Tag>
+                    <h2>{post.title}</h2>
+                    <p>{post.body}</p>
+                    <div>
+                      {(post.offer || []).map((o: string) => (
+                        <Tag tone="offer" key={o}>{o}</Tag>
+                      ))}
+                      {(post.need || []).map((n: string) => (
+                        <Tag tone="need" key={n}>Needs: {n}</Tag>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <footer className="feed-card-actions">
+                <button onClick={() => showToast("Following your own project")}>
+                  <Icon name="check" /> Published
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(typeof window !== "undefined" ? window.location.origin : "").catch(() => {})
+                    showToast("Project link copied to clipboard!")
+                  }}
+                >
+                  <Icon name="send" /> Share
+                </button>
+              </footer>
+            </article>
+          ))}
+
           {/* Collaborator Match Card */}
           <article className="feed-card clean-card match-post">
             <header className="feed-card-header">
@@ -2478,48 +2810,31 @@ export function HomeView({
                 <strong>Nexus match</strong>
                 <span>Recommended because of your research needs</span>
               </div>
-              <div className="options-anchor">
+              <div className="match-quick-actions">
                 <button
                   className="icon-button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setMatchMenuOpen(!matchMenuOpen)
+                  title="Save match"
+                  onClick={() => showToast("Saved Jordan Lee's match to your shortlist")}
+                >
+                  <Icon name="pin" size={15} />
+                </button>
+                <button
+                  className="icon-button"
+                  title="Share profile"
+                  onClick={() => {
+                    navigator.clipboard?.writeText("https://nexus.research/profile/jordan-lee").catch(() => {})
+                    showToast("Profile link copied")
                   }}
                 >
-                  <Icon name="more" />
+                  <Icon name="copy" size={15} />
                 </button>
-                {matchMenuOpen && (
-                  <div className="options-dropdown">
-                    <button
-                      className="options-item"
-                      onClick={() => {
-                        setMatchMenuOpen(false)
-                        showToast("Saved Jordan Lee's match to your shortlist")
-                      }}
-                    >
-                      <Icon name="pin" size={14} /> Save match
-                    </button>
-                    <button
-                      className="options-item"
-                      onClick={() => {
-                        setMatchMenuOpen(false)
-                        navigator.clipboard?.writeText("https://nexus.research/profile/jordan-lee").catch(() => {})
-                        showToast("Profile link copied")
-                      }}
-                    >
-                      <Icon name="copy" size={14} /> Share profile
-                    </button>
-                    <button
-                      className="options-item"
-                      onClick={() => {
-                        setMatchMenuOpen(false)
-                        showToast("Feedback noted: will adjust match weighting")
-                      }}
-                    >
-                      <Icon name="close" size={14} /> Not interested
-                    </button>
-                  </div>
-                )}
+                <button
+                  className="icon-button"
+                  title="Not interested"
+                  onClick={() => showToast("Feedback noted: will adjust match weighting")}
+                >
+                  <Icon name="close" size={15} />
+                </button>
               </div>
             </header>
             <div className="match-post-body">
@@ -3598,10 +3913,6 @@ export function ProductOverlay({
   const [selectedPerson, setSelectedPerson] = useState("Jordan Lee")
   const [revealAccepted, setRevealAccepted] = useState(false)
 
-  // Graph state
-  const [graphFilter, setGraphFilter] = useState("All campus")
-  const [selectedNode, setSelectedNode] = useState<{ label: string; dept: string; papers: number } | null>(null)
-
   // Funding state
   const [activeGrantIdx, setActiveGrantIdx] = useState(0)
   const [agencyFilter, setAgencyFilter] = useState("All agencies")
@@ -3718,6 +4029,9 @@ export function ProductOverlay({
                   <Tag tone="stage">Identity Revealed by You</Tag>
                 </div>
               </div>
+              <div className="reveal-link">
+                <Icon name={revealAccepted ? "check" : "lock"} size={16} />
+              </div>
               <div className={`reveal-card ${revealAccepted ? "revealed" : "blurred"}`}>
                 <Avatar initials="JL" color="blue" active={revealAccepted} />
                 <div className="reveal-meta">
@@ -3815,78 +4129,6 @@ export function ProductOverlay({
               >
                 <Icon name="download" /> Download receipt (.json)
               </button>
-            </div>
-          </div>
-        )}
-
-        {overlay === "graph" && (
-          <div className="graph-workspace">
-            <div className="graph-toolbar">
-              <label>
-                <Icon name="search" />
-                <input placeholder="Search people, topics, or papers in graph..." />
-              </label>
-              {["All campus", "People", "Projects", "Papers"].map((tab) => (
-                <button
-                  key={tab}
-                  className={graphFilter === tab ? "active" : ""}
-                  onClick={() => {
-                    setGraphFilter(tab)
-                    showToast(`Graph filtered by: ${tab}`)
-                  }}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-            <div className="graph-main">
-              <div className="graph-canvas">
-                <svg viewBox="0 0 800 520" aria-label="Research graph">
-                  <g stroke="#bfd0df" strokeWidth="1.2">
-                    <path d="M150 190 350 110 520 180 650 95M150 190 280 330 470 360 650 95M350 110 470 360M520 180 280 330M470 360 680 390M280 330 120 410" />
-                  </g>
-                  {[
-                    [150, 190, 32, "#0a66c2", "Federated Learning", "EECS"],
-                    [350, 110, 27, "#6755a6", "EEG Telemetry", "Neuroscience"],
-                    [520, 180, 36, "#2d8067", "Neural Decoding", "Helen Wills"],
-                    [650, 95, 23, "#a46d27", "Mobile Hardware", "Bioengineering"],
-                    [280, 330, 34, "#0a66c2", "Differential Privacy", "EECS"],
-                    [470, 360, 29, "#6755a6", "Sleep Staging", "Clinical Precision"],
-                  ].map(([cx, cy, r, fill, label, dept], idx) => (
-                    <g
-                      key={idx}
-                      className="graph-node"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => setSelectedNode({ label: String(label), dept: String(dept), papers: 8 + idx * 3 })}
-                    >
-                      <circle cx={Number(cx)} cy={Number(cy)} r={Number(r)} fill={String(fill)} opacity=".92" />
-                      <circle cx={Number(cx)} cy={Number(cy)} r={Number(r) + 7} fill="none" stroke={String(fill)} opacity=".2" />
-                      <text x={Number(cx)} y={Number(cy) + 4} textAnchor="middle" fill="#fff" fontSize={10} fontWeight={600}>
-                        {String(label).split(" ")[0]}
-                      </text>
-                    </g>
-                  ))}
-                </svg>
-              </div>
-              <aside className="graph-inspector">
-                <h3>{selectedNode ? selectedNode.label : "Knowledge Gap Found"}</h3>
-                <Tag tone="stage">{selectedNode ? selectedNode.dept : "CROSS-DISCIPLINARY OPPORTUNITY"}</Tag>
-                <p style={{ margin: "10px 0", fontSize: 12, lineHeight: 1.5, color: "var(--muted)" }}>
-                  {selectedNode
-                    ? `Connected across ${selectedNode.papers} indexed publications and 3 active Berkeley research pods.`
-                    : "No lab in EECS is currently paired with Helen Wills EEG Mobile Rig despite 14 overlapping citations on latent alignment."}
-                </p>
-                <button
-                  className="accent-button"
-                  style={{ width: "100%", justifyContent: "center" }}
-                  onClick={() => {
-                    onClose()
-                    onNavigate("campus")
-                  }}
-                >
-                  Bridge this gap on Campus <Icon name="arrow" />
-                </button>
-              </aside>
             </div>
           </div>
         )}
@@ -4249,6 +4491,7 @@ export function ProductOverlay({
 // --- ROOT APPLICATION COMPONENT ---
 
 export default function App() {
+  const [authed, setAuthed] = useState(true)
   const [view, setView] = useState<View>("home")
   const [telemetry, setTelemetry] = useState(false)
   const [telemetryPrompt, setTelemetryPrompt] = useState<string | undefined>()
@@ -4264,6 +4507,7 @@ export default function App() {
   const [addTeammateOpen, setAddTeammateOpen] = useState(false)
   const [addPaperOpen, setAddPaperOpen] = useState(false)
   const [charterOpen, setCharterOpen] = useState(false)
+  const [newPosts, setNewPosts] = useState<any[]>([])
   const toastTimeoutRef = useRef<any>(null)
 
   const showToast = useCallback((msg: string) => {
@@ -4282,6 +4526,10 @@ export default function App() {
     setTelemetry(true)
   }
 
+  if (!authed) {
+    return <AuthView onLogin={() => setAuthed(true)} />
+  }
+
   return (
     <AppFrame
       view={view}
@@ -4291,6 +4539,10 @@ export default function App() {
       showToast={showToast}
       openProfile={() => setProfileOpen(true)}
       openCharter={() => setCharterOpen(true)}
+      onLogout={() => {
+        setAuthed(false)
+        showToast("Logged out")
+      }}
     >
       {view === "home" && (
         <HomeView
@@ -4304,6 +4556,8 @@ export default function App() {
           openSaved={() => setSavedOpen(true)}
           openComposer={() => setComposerOpen(true)}
           openCharter={() => setCharterOpen(true)}
+          newPosts={newPosts}
+          onDeletePost={(id) => setNewPosts((prev) => prev.filter((p) => p.id !== id))}
         />
       )}
 
@@ -4314,6 +4568,14 @@ export default function App() {
           showToast={showToast}
           openProfile={() => setProfileOpen(true)}
         />
+      )}
+
+      {view === "literature" && (
+        <LiteratureView setView={setView} showToast={showToast} />
+      )}
+
+      {view === "graph" && (
+        <GraphView setView={setView} showToast={showToast} />
       )}
 
       {view === "vault" && (
@@ -4380,6 +4642,7 @@ export default function App() {
         <PostComposerModal
           onClose={() => setComposerOpen(false)}
           onPublish={(post) => {
+            setNewPosts((prev) => [{ ...post, id: `post-${Date.now()}` }, ...prev])
             showToast(`Project "${post.title}" published to network!`)
           }}
         />
