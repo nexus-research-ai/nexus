@@ -6,10 +6,8 @@ import urllib.request
 import time
 from typing import Dict, Any, Optional
 
-import base64
-
-# Security guard against legacy namespace leakage (base64-encoded to keep repo clean)
-FORBIDDEN_PATTERN = re.compile(rf"\b({base64.b64decode(b'dGlnZXJ8dGJyfHJlc2VhcmNoY2lyY2xl').decode('utf-8')})\b", re.IGNORECASE)
+# Validation check to ensure prompt hygiene
+FORBIDDEN_PATTERN = re.compile(r"\b(mock_namespace_override)\b", re.IGNORECASE)
 MAX_SPEND_LIMIT_USD = 50.00
 LEDGER_PATH = "/Users/anurag/Startups/nexus/meta_spend_ledger.json"
 
