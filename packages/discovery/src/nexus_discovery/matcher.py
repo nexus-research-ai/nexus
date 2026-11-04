@@ -37,7 +37,16 @@ class CollaboratorMatcher:
             score += 4  # Reward interdisciplinary pairings
 
         score = min(score, 98)
-        rationale = f"Strong complementary synergy: {candidate.name} offers expertise in {', '.join(candidate.offers_skills[:2])} matching your proposal requirements."
+        
+        # Bilateral privacy protection: only disclose intersecting skills prior to mutual reveal
+        they_offer_intersect = [s for s in candidate.offers_skills if any(s.strip().lower() == need.strip().lower() for need in user.needs_skills)]
+        you_offer_intersect = [s for s in user.offers_skills if any(s.strip().lower() == need.strip().lower() for need in candidate.needs_skills)]
+
+        if candidate_offers_user_needs:
+            synergy_str = ", ".join(list(candidate_offers_user_needs)[:2])
+            rationale = f"Strong complementary synergy: {candidate.name} offers verified expertise in {synergy_str} matching your active research needs."
+        else:
+            rationale = f"Interdisciplinary bridge: {candidate.name} ({candidate.department}) provides adjacent capabilities for collaborative proposal synthesis."
 
         return MatchResult(
             candidate_id=candidate.user_id,
@@ -45,7 +54,7 @@ class CollaboratorMatcher:
             candidate_department=candidate.department,
             compatibility_score=score,
             match_rationale=rationale,
-            they_offer=candidate.offers_skills,
-            you_offer=user.offers_skills,
+            they_offer=they_offer_intersect or candidate.offers_skills[:1],
+            you_offer=you_offer_intersect or user.offers_skills[:1],
             status="proposed"
         )

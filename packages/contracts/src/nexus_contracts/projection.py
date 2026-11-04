@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from .lattice import Tier
 
 class DiscoverabilityScope(str, Enum):
@@ -15,6 +15,8 @@ class PublishableProjection(BaseModel):
     
     INVARIANT (D6): Confidential payloads NEVER enter projections.
     """
+    model_config = ConfigDict(frozen=True)
+
     entity_id: str
     entity_type: str
     tier: Tier
