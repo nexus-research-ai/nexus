@@ -57,6 +57,8 @@ def test_funding_finder_and_tracker():
     assert advanced.current_milestone_index == 3
     assert advanced.readiness_score == 88
 
+from nexus_funding.compliance import SolicitationComplianceChecker
+
 def test_citation_auditor():
     auditor = CitationAuditor()
     source = GroundingSource(
@@ -71,3 +73,14 @@ def test_citation_auditor():
     res = auditor.audit_claim("Optimal transport achieves cross-cohort neural telemetry alignment.", [source])
     assert res["status"] == "supported"
     assert res["grounding_score"] >= 80
+
+def test_funding_compliance_darpa():
+    checker = SolicitationComplianceChecker()
+    report = checker.audit_proposal("DARPA", {"narrative": "DoD operational transition plan and Quad Chart summary included."}, page_count=7)
+    assert report.agency == "DARPA"
+    assert report.total_rules == 4
+    assert report.ready_for_submission is True
+
+    # Exceeding page limit should fail readiness
+    overlength_report = checker.audit_proposal("DARPA", {"narrative": "DoD operational transition"}, page_count=10)
+    assert overlength_report.ready_for_submission is False
