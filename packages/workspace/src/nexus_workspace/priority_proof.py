@@ -15,7 +15,7 @@ class PriorityProofEngine:
         timestamp = int(time.time())
         merkle_root = hashlib.sha256(f"{raw_hash}:{timestamp}:{author_id}".encode("utf-8")).hexdigest()
         
-        cert_num = f"NX-{int(raw_hash[:8], 16) % 9000 + 1000}"
+        cert_num = f"NX-{raw_hash[:8].upper()}"
         return {
             "certificate_number": cert_num,
             "author_id": author_id,

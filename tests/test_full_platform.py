@@ -57,6 +57,8 @@ def test_funding_finder_and_tracker():
     assert advanced.current_milestone_index == 3
     assert advanced.readiness_score == 88
 
+from nexus_funding.compliance import SolicitationComplianceChecker
+
 def test_citation_auditor():
     auditor = CitationAuditor()
     source = GroundingSource(
@@ -71,3 +73,34 @@ def test_citation_auditor():
     res = auditor.audit_claim("Optimal transport achieves cross-cohort neural telemetry alignment.", [source])
     assert res["status"] == "supported"
     assert res["grounding_score"] >= 80
+
+def test_funding_compliance_darpa():
+    checker = SolicitationComplianceChecker()
+    report = checker.audit_proposal("DARPA", {"narrative": "DoD operational transition plan and Quad Chart summary included."}, page_count=7)
+    assert report.agency == "DARPA"
+    assert report.total_rules == 4
+    assert report.ready_for_submission is True
+
+    # Exceeding page limit should fail readiness
+    overlength_report = checker.audit_proposal("DARPA", {"narrative": "DoD operational transition"}, page_count=10)
+    assert overlength_report.ready_for_submission is False
+
+import os
+
+def test_campus_graph_dataset_and_query():
+    g = LivingCampusGraph()
+    dataset_path = os.environ.get(
+        "NEXUS_GRAPH_DATA",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/nexus_full_graph.json"))
+    )
+    if os.path.exists(dataset_path):
+        assert g.load_dataset(dataset_path) is True
+        res = g.query_graph(limit=50)
+        assert len(res['nodes']) == 50
+        assert len(res['links']) > 0
+
+        # Test ego network
+        topic_node = res['nodes'][0]['id']
+        ego_res = g.query_graph(limit=50, center_id=topic_node, hops=2)
+        assert ego_res['center_node'] is not None
+        assert ego_res['center_node']['id'] == topic_node

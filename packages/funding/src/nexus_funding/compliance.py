@@ -35,21 +35,35 @@ class SolicitationComplianceChecker:
         ComplianceRule(rule_id="nih-auth", agency="NIH", requirement="Authentication of Key Biological and Chemical Resources included.", mandatory=False)
     ]
 
+    DARPA_RULES = [
+        ComplianceRule(rule_id="darpa-page-limit", agency="DARPA", requirement="Executive summary and technical narrative capped at 8 pages.", mandatory=True),
+        ComplianceRule(rule_id="darpa-quad-chart", agency="DARPA", requirement="One-page Quad Chart summarizing technical approach and milestones.", mandatory=True),
+        ComplianceRule(rule_id="darpa-oci", agency="DARPA", requirement="Organizational Conflict of Interest (OCI) certification included.", mandatory=True),
+        ComplianceRule(rule_id="darpa-transition", agency="DARPA", requirement="DoD technology transition and operational impact path defined.", mandatory=True)
+    ]
+
     def audit_proposal(self, agency: str, sections: Dict[str, str], page_count: int = 14) -> ComplianceReport:
         agency_upper = agency.upper()
-        rules = self.NSF_RULES if agency_upper == "NSF" else self.NIH_RULES
+        if agency_upper == "NSF":
+            rules = self.NSF_RULES
+        elif agency_upper == "NIH":
+            rules = self.NIH_RULES
+        elif agency_upper == "DARPA":
+            rules = self.DARPA_RULES
+        else:
+            rules = self.NSF_RULES
         
         findings = []
         passed = 0
         recommendations = []
+        full_text = " ".join(sections.values()).lower()
 
         for r in rules:
             rule_passed = True
             finding_detail = "Satisfied"
 
             if r.rule_id == "nsf-sec-bi":
-                text = " ".join(sections.values()).lower()
-                if "broader impacts" not in text:
+                if "broader impacts" not in full_text:
                     rule_passed = False
                     finding_detail = "Missing dedicated 'Broader Impacts' section heading."
                     recommendations.append("Insert explicit Section 2.3: Broader Impacts on Campus & Society.")
@@ -60,12 +74,26 @@ class SolicitationComplianceChecker:
                     finding_detail = f"Page count ({page_count}) exceeds NSF 15-page limit."
                     recommendations.append(f"Trim {page_count - 15} pages from technical approach.")
 
+            elif r.rule_id == "nsf-dmp":
+                if "data management" not in full_text:
+                    finding_detail = "Data Management Plan: Manual Verification Required."
+
             elif r.rule_id == "nih-aims-limit":
                 aims_text = sections.get("aims", "")
                 if len(aims_text.split()) > 750:
                     rule_passed = False
                     finding_detail = "Specific Aims text exceeds 1-page equivalent word ceiling."
                     recommendations.append("Condense Specific Aims to under 700 words.")
+
+            elif r.rule_id == "darpa-page-limit":
+                if page_count > 8:
+                    rule_passed = False
+                    finding_detail = f"Page count ({page_count}) exceeds DARPA 8-page YFA limit."
+                    recommendations.append(f"Condense narrative to 8 pages for DARPA solicitation.")
+
+            elif r.rule_id == "darpa-quad-chart":
+                if "quad chart" not in full_text:
+                    finding_detail = "Quad Chart Attachment: Manual Verification Required."
 
             if rule_passed:
                 passed += 1

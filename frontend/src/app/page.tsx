@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import GraphViewer from "@/components/GraphViewer"
 
 export type View = "home" | "campus" | "literature" | "vault" | "pod" | "proof" | "graph"
 export const mainNavKeys: View[] = ["home", "campus", "literature", "vault", "graph"]
@@ -2203,9 +2204,6 @@ export function LiteratureView({
 
 // --- KNOWLEDGE GRAPH VIEW ---
 
-type GraphNode = { id: string; label: string; type: string; department?: string }
-type GraphEdge = { source: string; target: string; relation: string }
-
 export function GraphView({
   setView,
   showToast,
@@ -2213,59 +2211,9 @@ export function GraphView({
   setView: (view: View) => void
   showToast: (msg: string) => void
 }) {
-  const [nodes, setNodes] = useState<GraphNode[]>([])
-  const [edges, setEdges] = useState<GraphEdge[]>([])
-  const [clusters, setClusters] = useState<Record<string, number>>({})
-  const [loading, setLoading] = useState(true)
-  const [typeFilter, setTypeFilter] = useState<"all" | "paper" | "researcher" | "topic">("all")
-  const [selected, setSelected] = useState<GraphNode | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    fetch("/api/v1/literature/graph")
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return
-        setNodes(data.nodes || [])
-        setEdges(data.edges || [])
-        setClusters(data.clusters || {})
-      })
-      .catch(() => {
-        if (!cancelled) showToast("Couldn't reach the knowledge graph service")
-      })
-      .finally(() => !cancelled && setLoading(false))
-    return () => {
-      cancelled = true
-    }
-  }, [showToast])
-
-  const visibleNodes = useMemo(
-    () => (typeFilter === "all" ? nodes : nodes.filter((n) => n.type === typeFilter)),
-    [nodes, typeFilter]
-  )
-
-  const colorFor = (type: string) => (type === "paper" ? "#0a66c2" : type === "researcher" ? "#2d8067" : "#a46d27")
-
-  const laidOut = useMemo(() => {
-    const cx = 400
-    const cy = 260
-    const radius = 210
-    return visibleNodes.map((n, i) => {
-      const angle = (i / Math.max(visibleNodes.length, 1)) * Math.PI * 2
-      return { ...n, x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) }
-    })
-  }, [visibleNodes])
-
-  const posById = useMemo(() => {
-    const map = new Map<string, { x: number; y: number }>()
-    laidOut.forEach((n) => map.set(n.id, { x: n.x, y: n.y }))
-    return map
-  }, [laidOut])
-
   return (
     <div className="view">
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button
           className="text-button"
           onClick={() => setView("home")}
@@ -2273,71 +2221,35 @@ export function GraphView({
         >
           <Icon name="arrow" /> Back to Research Feed
         </button>
+        <button
+          className="secondary-button"
+          onClick={() => setView("literature")}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, padding: "6px 14px" }}
+        >
+          <Icon name="book" /> Open Literature Search
+        </button>
       </div>
 
       <div
         className="graph-workspace"
-        style={{ height: "auto", minHeight: "78vh", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden" }}
+        style={{
+          height: "calc(100vh - 220px)",
+          minHeight: 680,
+          border: "1px solid var(--line)",
+          borderRadius: 14,
+          overflow: "hidden",
+          background: "var(--card)",
+          position: "relative",
+        }}
       >
-        <div className="graph-toolbar">
-          <span style={{ fontWeight: 700 }}>
-            Knowledge Graph <small style={{ fontWeight: 400, color: "var(--muted)" }}>
-              {nodes.length} nodes · {edges.length} edges
-            </small>
-          </span>
-          {(["all", "researcher", "paper", "topic"] as const).map((tab) => (
-            <button
-              key={tab}
-              className={typeFilter === tab ? "active" : ""}
-              onClick={() => setTypeFilter(tab)}
-            >
-              {tab === "all" ? `All (${nodes.length})` : `${tab[0].toUpperCase()}${tab.slice(1)}s (${clusters[tab + "s"] ?? 0})`}
-            </button>
-          ))}
-        </div>
-        <div className="graph-main">
-          <div className="graph-canvas">
-            {loading ? (
-              <p style={{ padding: 24, color: "var(--muted)" }}>Loading graph…</p>
-            ) : (
-              <svg viewBox="0 0 800 520" aria-label="Research knowledge graph">
-                <g stroke="#bfd0df" strokeWidth="1" opacity={0.5}>
-                  {edges
-                    .filter((e) => posById.has(e.source) && posById.has(e.target))
-                    .map((e, idx) => {
-                      const a = posById.get(e.source)!
-                      const b = posById.get(e.target)!
-                      return <line key={idx} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
-                    })}
-                </g>
-                {laidOut.map((n) => (
-                  <g key={n.id} className="graph-node" style={{ cursor: "pointer" }} onClick={() => setSelected(n)}>
-                    <circle cx={n.x} cy={n.y} r={n.type === "paper" ? 20 : n.type === "researcher" ? 16 : 12} fill={colorFor(n.type)} opacity={0.92} />
-                    <text x={n.x} y={n.y + 4} textAnchor="middle" fill="#fff" fontSize={9} fontWeight={600}>
-                      {n.label.split(" ")[0].slice(0, 8)}
-                    </text>
-                  </g>
-                ))}
-              </svg>
-            )}
-          </div>
-          <aside className="graph-inspector">
-            <h3>{selected ? selected.label : "Select a node"}</h3>
-            <Tag tone="stage">{selected ? selected.type : "overview"}</Tag>
-            <p style={{ margin: "10px 0", fontSize: 12, lineHeight: 1.5, color: "var(--muted)" }}>
-              {selected
-                ? `${selected.type === "paper" ? "Paper" : selected.type === "researcher" ? "Researcher" : "Topic"} node${selected.department ? ` · ${selected.department}` : ""}. Connected via ${edges.filter((e) => e.source === selected.id || e.target === selected.id).length} edges.`
-                : "Click a node to inspect it, or use Literature Search to search the underlying papers directly."}
-            </p>
-            <button
-              className="accent-button"
-              style={{ width: "100%", justifyContent: "center" }}
-              onClick={() => setView("literature")}
-            >
-              Open Literature Search <Icon name="arrow" />
-            </button>
-          </aside>
-        </div>
+        <GraphViewer
+          onSearchTopic={(topic) => {
+            showToast(`Filtered knowledge graph by: ${topic}`)
+          }}
+          onAttachSource={(sourceId) => {
+            showToast(`Selected source ${sourceId}`)
+          }}
+        />
       </div>
     </div>
   )

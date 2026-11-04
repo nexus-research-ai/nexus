@@ -34,6 +34,17 @@ def test_pep_egress_department_scope():
     v2 = pep.evaluate_egress(proj, bio_principal)
     assert v2.allowed is True
 
+def test_projection_immutability():
+    proj = PublishableProjection(
+        entity_id="proj-frozen",
+        entity_type="project",
+        tier=Tier.SHARED,
+        payload={"department": "Bioengineering"},
+        owner_cell_id="cell-a"
+    )
+    with pytest.raises(Exception):
+        proj.tier = Tier.CONFIDENTIAL
+
 def test_priority_proof_generation():
     proof = PriorityProofEngine.generate_proof(
         hypothesis="Differential privacy for real-time EEG decoders",
@@ -41,5 +52,6 @@ def test_priority_proof_generation():
         institution="UC Berkeley"
     )
     assert proof["certificate_number"].startswith("NX-")
+    assert len(proof["certificate_number"]) == 11  # NX- + 8 hex chars
     assert len(proof["merkle_root"]) == 64
     assert len(proof["sha256_hash"]) == 64
