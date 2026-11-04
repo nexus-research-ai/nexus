@@ -1,9 +1,9 @@
 {
-  "total_spend_usd": 0.05171600000000001,
-  "total_requests": 9,
-  "total_prompt_tokens": 1799,
-  "total_completion_tokens": 16639,
-  "total_reasoning_tokens": 16405,
+  "total_spend_usd": 0.150872,
+  "total_requests": 16,
+  "total_prompt_tokens": 13451,
+  "total_completion_tokens": 45807,
+  "total_reasoning_tokens": 28805,
   "requests": [
     {
       "timestamp": "2026-11-04 20:12:05 UTC",
@@ -94,6 +94,76 @@
       "cost_usd": 0.006552,
       "cumulative_spend_usd": 0.051716,
       "elapsed_seconds": 30.75
+    },
+    {
+      "timestamp": "2026-11-04 22:29:34 UTC",
+      "model": "muse-spark-1.3",
+      "prompt_tokens": 531,
+      "completion_tokens": 2629,
+      "reasoning_tokens": 1754,
+      "cost_usd": 0.008418,
+      "cumulative_spend_usd": 0.060134,
+      "elapsed_seconds": 36.09
+    },
+    {
+      "timestamp": "2026-11-04 22:31:24 UTC",
+      "model": "muse-spark-1.3",
+      "prompt_tokens": 2556,
+      "completion_tokens": 4500,
+      "reasoning_tokens": 2009,
+      "cost_usd": 0.016056,
+      "cumulative_spend_usd": 0.07619,
+      "elapsed_seconds": 65.8
+    },
+    {
+      "timestamp": "2026-11-04 22:32:09 UTC",
+      "model": "muse-spark-1.3",
+      "prompt_tokens": 1648,
+      "completion_tokens": 4419,
+      "reasoning_tokens": 2038,
+      "cost_usd": 0.014905,
+      "cumulative_spend_usd": 0.091095,
+      "elapsed_seconds": 44.41
+    },
+    {
+      "timestamp": "2026-11-04 22:33:12 UTC",
+      "model": "muse-spark-1.3",
+      "prompt_tokens": 1961,
+      "completion_tokens": 4500,
+      "reasoning_tokens": 1502,
+      "cost_usd": 0.015461,
+      "cumulative_spend_usd": 0.106556,
+      "elapsed_seconds": 63.48
+    },
+    {
+      "timestamp": "2026-11-04 22:34:14 UTC",
+      "model": "muse-spark-1.3",
+      "prompt_tokens": 1938,
+      "completion_tokens": 4321,
+      "reasoning_tokens": 1725,
+      "cost_usd": 0.014901,
+      "cumulative_spend_usd": 0.121457,
+      "elapsed_seconds": 61.77
+    },
+    {
+      "timestamp": "2026-11-04 22:35:17 UTC",
+      "model": "muse-spark-1.3",
+      "prompt_tokens": 2263,
+      "completion_tokens": 4299,
+      "reasoning_tokens": 1544,
+      "cost_usd": 0.01516,
+      "cumulative_spend_usd": 0.136617,
+      "elapsed_seconds": 62.78
+    },
+    {
+      "timestamp": "2026-11-04 22:36:20 UTC",
+      "model": "muse-spark-1.3",
+      "prompt_tokens": 755,
+      "completion_tokens": 4500,
+      "reasoning_tokens": 1828,
+      "cost_usd": 0.014255,
+      "cumulative_spend_usd": 0.150872,
+      "elapsed_seconds": 63.84
     }
   ]
 }

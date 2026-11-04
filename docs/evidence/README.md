@@ -1,30 +1,35 @@
-# Meta API Empirical Evidence & Verification Suite
+# Meta API Empirical Evidence & Conversation Transcripts
 
-This directory contains empirical evidence, audit benchmarks, telemetry ledgers, and multimodal evaluation reports for all Meta API integrations across the **Nexus** platform.
+This directory contains the original markdown records of our strategic design, code audit, and architectural conversations with **Meta AI (`muse-wonder-1.0` and `muse-spark-1.3`)**, alongside empirical telemetry reports and the financial spend ledger for the **Nexus** platform.
 
 ---
 
-## Evidence Directory Structure
+## 1. Meta AI Conversation Transcripts (Original Markdown Records)
+
+- [meta_ai_code_review_audit.md](file:///Users/anurag/Startups/nexus/docs/evidence/meta_ai_code_review_audit.md)  
+  *Comprehensive architecture, security invariants, and code quality audit conducted via Meta AI Frontier Reasoning (`muse-spark-1.3`). Covers IFC lattice enforcement, PEP D4 chokepoints, ZK vault sealing, living campus graph algorithms, citation auditor grounding, and solicitation compliance.*
+
+- [meta_ai_design_feedback.md](file:///Users/anurag/Startups/nexus/docs/evidence/meta_ai_design_feedback.md)  
+  *Direct transcript of Meta AI (`muse-wonder-1.0`) architecture and hackathon review on Grand Prize positioning, pixel-to-proof evidence, and the hybrid SAM 3.1 $\to$ Muse reasoning chain.*
+
+- [meta_ai_campus_graph_pitch_and_privacy.md](file:///Users/anurag/Startups/nexus/docs/evidence/meta_ai_campus_graph_pitch_and_privacy.md)  
+  *Direct transcript of Meta AI strategic advisory on anti-scooping privacy UX (Vault $\to$ Teaser $\to$ Public), local Web Crypto SHA-256 commit-reveal protocol, and the 3-minute winning demo script.*
+
+- [meta_ai_campus_graph_strategy.md](file:///Users/anurag/Startups/nexus/docs/evidence/meta_ai_campus_graph_strategy.md)  
+  *Direct transcript of Meta AI strategic advisory on indexing the pre-publication graph of universities, dual Need/Offer embedding vectors, and 2-stage serendipity matchmaking.*
+
+- [meta_ai_ui_ux_specification.md](file:///Users/anurag/Startups/nexus/docs/evidence/meta_ai_ui_ux_specification.md)  
+  *Direct transcript of Meta AI Principal UI/UX design specification: Linear/Figma velocity + Overleaf rigor, 100dvh spatial canvas, and bias-free double opt-in identity reveal.*
+
+---
+
+## 2. API Telemetry, Spend & Evaluation Reports
 
 - [meta_api_spend_report.md](file:///Users/anurag/Startups/nexus/docs/evidence/meta_api_spend_report.md)  
-  *Audit breakdown of token consumption, cost accounting per endpoint, latency distributions, and cumulative spend ledger tracking against the allocated $50.00 Meta API budget.*
+  *Itemized audit log of all production requests tracked against the allocated $50.00 Meta API budget in `meta_spend_ledger.json`.*
 
 - [muse_reasoning_benchmarks.md](file:///Users/anurag/Startups/nexus/docs/evidence/muse_reasoning_benchmarks.md)  
-  *Empirical benchmarks for scientific proposal synthesis, multi-step deductive reasoning, NSF/NIH specific aims extraction, and sentence-level citation grounding using Meta Muse / LLaMA reasoning models.*
+  *Empirical benchmarks evaluating Meta Muse reasoning for NSF/NIH Specific Aims synthesis, interdisciplinary gap deduction, and sentence-level citation grounding.*
 
 - [sam_multimodal_figure_audit.md](file:///Users/anurag/Startups/nexus/docs/evidence/sam_multimodal_figure_audit.md)  
-  *Multimodal scientific figure parsing and visual element segmentation using Meta Segment Anything Model (SAM 3.1) across neural telemetry spectrograms, microscopy plates, and manifold projections.*
-
----
-
-## Key Telemetry Highlights
-
-| Metric | Measured Value |
-|---|---|
-| **Cumulative API Requests** | 8 production queries |
-| **Total Prompt Tokens** | 1,247 tokens |
-| **Total Completion & Reasoning Tokens** | 14,639 tokens (14,407 reasoning tokens) |
-| **Cumulative Spend** | $0.0452 USD |
-| **Allocated Budget Ceiling** | $50.00 USD |
-| **Mean Reasoning Latency** | 20.8 seconds per 2,200 token synthesis |
-| **Zero-Hallucination Grounding Score** | 94.2% verified against literature quotes |
+  *Multimodal scientific figure parsing and visual element segmentation using Meta Segment Anything Model (SAM 3.1) across neural spectrograms, microscopy, and PCA manifolds.*
