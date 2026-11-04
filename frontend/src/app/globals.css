@@ -859,6 +859,3 @@ body{background:var(--paper)}
   display: block;
   white-space: pre-wrap;
 }
-
-/* Temporary dev styling */
-.dev-debug-marker { outline: 1px red solid; }
