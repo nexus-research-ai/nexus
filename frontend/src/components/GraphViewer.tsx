@@ -115,7 +115,8 @@ export default function GraphViewer({ onSearchTopic, onAttachSource, attachedSou
     const { x, y } = node as PositionedNode;
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     const selected = node.id === selectedId;
-    const radius = node.type === 'faculty' ? 6 : node.type === 'topic' ? 5 : 3.5;
+    const baseRadius = node.type === 'faculty' ? 6 : node.type === 'topic' ? 5 : 3.5;
+    const radius = Math.max(baseRadius, (selected ? 5 : node.type === 'paper' ? 2 : 3) / scale);
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fillStyle = nodeColors[node.type];
