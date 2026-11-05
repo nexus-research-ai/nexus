@@ -87,6 +87,12 @@ export default function GraphViewer({ onSearchTopic, onAttachSource, attachedSou
     fitPending.current = false;
   }, []);
 
+  useEffect(() => {
+    if (loading || dimensions.width <= 0 || dimensions.height <= 0) return;
+    const timer = window.setTimeout(() => graphRef.current?.zoomToFit(250, 48), 150);
+    return () => window.clearTimeout(timer);
+  }, [dimensions.width, dimensions.height, loading]);
+
   const reset = () => {
     setQuery('');
     setAppliedQuery('');

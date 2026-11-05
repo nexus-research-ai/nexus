@@ -714,7 +714,7 @@ export const initialPapers = [
 ]
 
 export const searchCatalog = [
-  { type: "person", title: "Jordan Hayes", subtitle: "PhD Candidate · Cognitive Neuroscience · Helen Wills Institute", meta: "0.4 miles away · Active now", view: "campus" },
+  { type: "person", title: "Jordan Lee", subtitle: "PhD Candidate · Cognitive Neuroscience · Helen Wills Institute", meta: "0.4 miles away · Active now", view: "campus" },
   { type: "person", title: "Maya Rodriguez", subtitle: "Postdoc · Robotics & Autonomous Systems", meta: "Pod Member · Active now", view: "pod" },
   { type: "person", title: "Jon Lee", subtitle: "PhD Candidate · Systems & Privacy · EECS", meta: "Pod Member · In Proposal Studio", view: "proof" },
   { type: "person", title: "Prof. Sarah Rao", subtitle: "Associate Professor · Computational Precision Health", meta: "Faculty Advisor", view: "campus" },
@@ -727,7 +727,9 @@ export const searchCatalog = [
   { type: "paper", title: "Federated Foundation Models for Neural Decoding", subtitle: "Nature Machine Intelligence · Zhang et al.", meta: "96% Verified", view: "proof" },
   { type: "paper", title: "HOSL: Hybrid-Order Split Learning for Edge Training", subtitle: "IEEE TMC · Lnu, Lee et al.", meta: "93% Verified", view: "pod" },
   { type: "skill", title: "Federated Representation Learning", subtitle: "Privacy-preserving multi-site optimization", meta: "14 Projects", view: "campus" },
-  { type: "skill", title: "Mobile EEG Lab Access (128-channel)", subtitle: "High-density mobile neurotelemetry", meta: "Jordan Hayes", view: "campus" },
+  { type: "skill", title: "Mobile EEG Lab Access (128-channel)", subtitle: "High-density mobile neurotelemetry", meta: "Jordan Lee", view: "campus" },
+  { type: "dataset", title: "Longitudinal Mobile EEG Cohort Dataset", subtitle: "128-channel dry electrode auditory ERP recordings", meta: "Jordan Lee · Access Ready", view: "campus" },
+  { type: "dataset", title: "Multi-Omics Single-Cell Genomic Dataset", subtitle: "Aligned RNA-seq and ATAC-seq decentralized cohorts", meta: "David Miller · Open for Collab", view: "campus" },
 ]
 
 // --- MODAL DIALOGS ---
@@ -745,7 +747,7 @@ export function ProfileModal({ onClose, onNavigate }: { onClose: () => void; onN
             <Avatar initials="AM" color="gold" active />
             <div>
               <h2 style={{ margin: "0 0 4px", fontSize: 20 }}>Aria Malik</h2>
-              <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>MS Computer Science · UC Berkeley</p>
+              <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>MS Computer Science · RIT</p>
               <small style={{ color: "var(--teal)", fontWeight: 600 }}>Hardware Sealed Key: 0x9f2a...7c01</small>
             </div>
           </div>
@@ -803,7 +805,7 @@ export function ViewsModal({ onClose }: { onClose: () => void }) {
             <strong>Top Viewing Institutions & Labs</strong>
             <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                ["Helen Wills Neuroscience Institute", "UC Berkeley", "68 views"],
+                ["Helen Wills Neuroscience Institute", "Partner Lab", "68 views"],
                 ["Stanford Neurosciences Institute", "Stanford University", "47 views"],
                 ["Computer Science & AI Lab (CSAIL)", "MIT", "39 views"],
                 ["Center for Neural Basis of Cognition", "CMU", "30 views"],
@@ -1341,12 +1343,12 @@ export function AppFrame({
         </nav>
 
         <div className="header-actions">
-          <button className="header-nav-button" onClick={() => openOverlay("funding")}>
+          <button className="header-nav-button" aria-label="Funding" title="Funding" onClick={() => openOverlay("funding")}>
             <Icon name="pin" size={18} />
             <span>Funding</span>
           </button>
 
-          <button className="header-nav-button" onClick={() => onTelemetry()}>
+          <button className="header-nav-button" aria-label="Nexus AI" title="Nexus AI" onClick={() => onTelemetry()}>
             <Icon name="message" size={18} />
             <span>Nexus AI</span>
           </button>
@@ -1409,7 +1411,7 @@ export function AppFrame({
                   <Avatar initials="AM" color="gold" active />
                   <div className="me-card-meta">
                     <h4>Aria Malik</h4>
-                    <p>MS Computer Science · UC Berkeley</p>
+                    <p>MS Computer Science · RIT</p>
                     <small>Hardware Key: 0x9f2a...7c01</small>
                   </div>
                 </div>
@@ -1458,7 +1460,7 @@ export function AppFrame({
                     className="me-menu-item"
                     onClick={() => {
                       setMeOpen(false)
-                      showToast("Session synced with Berkeley institutional directory")
+                      showToast("Session synced with RIT institutional directory")
                     }}
                   >
                     <Icon name="check" size={16} />
@@ -2230,7 +2232,7 @@ export function VaultView({
               </span>
               <div>
                 <Tag tone="stage">PROTOTYPE</Tag>
-                <small>{audience === "Stranger" ? "UC Berkeley Researcher" : "Aria Malik · EECS & Neuroscience"}</small>
+                <small>{audience === "Stranger" ? "RIT Researcher" : "Aria Malik · EECS & Neuroscience"}</small>
               </div>
             </div>
             <h3>
@@ -2256,7 +2258,7 @@ export function VaultView({
             <div className="blurred-owner">
               <Icon name="lock" size={16} />
               <span>
-                <b>{audience === "Stranger" ? "Identity hidden until mutual match" : "Verified Berkeley Student"}</b>
+                <b>{audience === "Stranger" ? "Identity hidden until mutual match" : "Verified RIT Student"}</b>
                 Double opt-in privacy guarantee
               </span>
               <button onClick={() => openOverlay("reveal")}>Request a private match</button>
@@ -2273,8 +2275,8 @@ export function VaultView({
 export function AuthView({ onLogin }: { onLogin: () => void }) {
   const [mode, setMode] = useState<"login" | "signup">("login")
   const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState("aria.malik@rit.edu")
+  const [password, setPassword] = useState("••••••••")
   const [error, setError] = useState("")
 
   const submit = (e: React.FormEvent) => {
@@ -2312,7 +2314,7 @@ export function AuthView({ onLogin }: { onLogin: () => void }) {
           )}
           <div className="auth-field">
             <label>EMAIL</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@berkeley.edu" />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="aria.malik@rit.edu" />
           </div>
           <div className="auth-field">
             <label>PASSWORD</label>
@@ -2480,7 +2482,7 @@ export function LiteratureView({
 export function GraphView({ setView }: { setView: (view: View) => void }) {
   return (
     <div className="view">
-      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="graph-view-navigation" style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button
           className="text-button"
           onClick={() => setView("home")}
@@ -2522,7 +2524,15 @@ export function CampusView({
 
   const filtered = useMemo(() => {
     return initialProjects.filter((p) => {
-      const matchesQuery = (p.title + p.body + p.dept).toLowerCase().includes(query.toLowerCase())
+      const q = query.toLowerCase()
+      const searchable = (
+        p.title + " " +
+        p.body + " " +
+        p.dept + " " +
+        (p.offer || []).join(" ") + " " +
+        (p.need || []).join(" ")
+      ).toLowerCase()
+      const matchesQuery = searchable.includes(q)
       if (activePill === "All campus") return matchesQuery
       if (activePill === "EECS") return matchesQuery && p.dept.includes("EECS")
       if (activePill === "Neuroscience") return matchesQuery && p.dept.includes("Neuroscience")
@@ -2546,7 +2556,7 @@ export function CampusView({
       <section className="campus-hero">
         <div className="campus-title">
           <div className="eyebrow">
-            <span className="live-dot" /> 1,284 ACTIVE PROJECTS AT BERKELEY
+            <span className="live-dot" /> 1,284 ACTIVE PROJECTS AT RIT
           </div>
           <h1>
             Find the people and projects<br />
@@ -2617,6 +2627,38 @@ export function CampusView({
               <Icon name="chevron" size={14} />
             </button>
           </div>
+
+          {query.trim() && (
+            <div className="matched-collaborators-bar clean-card" style={{ marginBottom: 16, padding: "12px 16px", background: "#f8fafc", border: "1px solid var(--line)", borderRadius: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <Icon name="spark" size={16} />
+                <strong style={{ fontSize: 13, color: "var(--ink)" }}>Campus Researchers with Matched Assets ("{query}")</strong>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10 }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", background: "white", borderRadius: 8, border: "1px solid var(--line)" }}>
+                  <Avatar initials="JL" color="gold" active />
+                  <div>
+                    <strong style={{ fontSize: 12, display: "block" }}>Jordan Lee</strong>
+                    <span style={{ fontSize: 11, color: "var(--muted)" }}>128-channel Longitudinal Mobile EEG Dataset</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", background: "white", borderRadius: 8, border: "1px solid var(--line)" }}>
+                  <Avatar initials="EC" color="violet" active />
+                  <div>
+                    <strong style={{ fontSize: 12, display: "block" }}>Emily Chen</strong>
+                    <span style={{ fontSize: 11, color: "var(--muted)" }}>Histopathology Microscopy Dataset · CV Lab</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", background: "white", borderRadius: 8, border: "1px solid var(--line)" }}>
+                  <Avatar initials="DM" color="blue" active />
+                  <div>
+                    <strong style={{ fontSize: 12, display: "block" }}>David Miller</strong>
+                    <span style={{ fontSize: 11, color: "var(--muted)" }}>Multi-Omics Single-Cell Dataset · Genomics</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="project-grid">
             {filtered.map((project, i) => (
               <article className="project-card" key={project.title}>
@@ -2826,7 +2868,7 @@ export function HomeView({
             <div className="profile-card-body">
               <Avatar initials="AM" color="gold" active />
               <h2>Aria Malik</h2>
-              <p>MS Computer Science · UC Berkeley</p>
+              <p>MS Computer Science · RIT</p>
               <small>Federated learning, neural decoding, and privacy-preserving AI</small>
               <button onClick={openProfile}>View profile</button>
             </div>
@@ -2973,7 +3015,7 @@ export function HomeView({
                 <button
                   className="icon-button"
                   title="Save match"
-                  onClick={() => showToast("Saved Jordan Hayes's match to your shortlist")}
+                  onClick={() => showToast("Saved Jordan Lee's match to your shortlist")}
                 >
                   <Icon name="pin" size={15} />
                 </button>
@@ -2981,7 +3023,7 @@ export function HomeView({
                   className="icon-button"
                   title="Share profile"
                   onClick={() => {
-                    navigator.clipboard?.writeText("https://nexus.research/profile/jordan-hayes").catch(() => {})
+                    navigator.clipboard?.writeText("https://nexus.research/profile/jordan-lee").catch(() => {})
                     showToast("Profile link copied")
                   }}
                 >
@@ -2998,9 +3040,9 @@ export function HomeView({
             </header>
             <div className="match-post-body">
               <div className="match-person">
-                <Avatar initials="JH" color="gold" active />
+                <Avatar initials="JL" color="gold" active />
                 <div>
-                  <h2>Jordan Hayes</h2>
+                  <h2>Jordan Lee</h2>
                   <p>PhD Researcher in Cognitive Neuroscience</p>
                   <span>Helen Wills Neuroscience Institute · 0.4 miles</span>
                 </div>
@@ -3032,14 +3074,14 @@ export function HomeView({
                     openOverlay("reveal")
                   } else {
                     setConnected(true)
-                    showToast("Private interest sent to Jordan Hayes! Awaiting mutual reveal.")
+                    showToast("Private interest sent to Jordan Lee! Awaiting mutual reveal.")
                   }
                 }}
               >
                 <Icon name={connected ? "check" : "users"} />
                 {connected ? "Review connection" : "Connect privately"}
               </button>
-              <button onClick={() => onTelemetry("Question for Jordan Hayes regarding 128-channel mobile EEG lab calibration protocols:")}>
+              <button onClick={() => onTelemetry("Question for Jordan Lee regarding 128-channel mobile EEG lab calibration protocols:")}>
                 <Icon name="message" /> Ask a question
               </button>
               <small>Profiles reveal only after both people accept</small>
@@ -3157,6 +3199,87 @@ export function HomeView({
               </div>
             )}
           </article>
+
+          {/* Emily Chen Post */}
+          <article className="feed-card clean-card project-post">
+            <header className="feed-card-header">
+              <Avatar initials="EC" color="violet" active />
+              <div>
+                <strong>Emily Chen</strong>
+                <span>PhD Student · Computer Vision & AI · Posted a project · 4h</span>
+              </div>
+            </header>
+            <div className="project-post-copy">
+              <p>Benchmarking zero-shot multimodal grounding on complex scientific figures using SAM 3.1. We isolate sub-panels, error bars, and axis labels directly from pre-print PDFs.</p>
+              <div className="project-post-panel">
+                <span className="project-post-art">
+                  <Icon name="spark" size={36} />
+                </span>
+                <div>
+                  <Tag tone="stage">PRE-PRINT</Tag>
+                  <h2>Pixel-to-Proof: Visual grounding of empirical claims with SAM 3.1</h2>
+                  <p>Looking for teams with digital pathology or neural spectrogram figures to expand our cross-domain evaluation benchmark.</p>
+                  <div>
+                    <Tag tone="offer">SAM 3.1 grounding</Tag>
+                    <Tag tone="offer">Zero-shot segmentation</Tag>
+                    <Tag tone="need">Needs: Pathology cohorts</Tag>
+                    <Tag tone="need">Needs: Grant figures</Tag>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <footer className="feed-card-actions">
+              <button onClick={() => showToast("Following Emily's project updates")}>
+                <Icon name="plus" /> Follow project
+              </button>
+              <button onClick={() => showToast("Opened comments")}>
+                <Icon name="message" /> Comment (3)
+              </button>
+              <button onClick={() => showToast("Project link copied!")}>
+                <Icon name="send" /> Share
+              </button>
+            </footer>
+          </article>
+
+          {/* Marcus Vance Post */}
+          <article className="feed-card clean-card project-post">
+            <header className="feed-card-header">
+              <Avatar initials="MV" color="teal" active />
+              <div>
+                <strong>Marcus Vance</strong>
+                <span>PhD Researcher · Bioengineering · Posted a project · 6h</span>
+              </div>
+            </header>
+            <div className="project-post-copy">
+              <p>Wireless micro-strain telemetry sensor array calibrated for multi-axial load tracking in soft tissue and continuous biomechanical feedback.</p>
+              <div className="project-post-panel">
+                <span className="project-post-art">
+                  <Icon name="brain" size={36} />
+                </span>
+                <div>
+                  <Tag tone="stage">PROTOTYPE</Tag>
+                  <h2>Synchronized multimodal telemetry for freely moving subjects</h2>
+                  <p>Seeking robotics actuation collaborators to benchmark sub-millimeter displacement tracking under cyclic load.</p>
+                  <div>
+                    <Tag tone="offer">Optical telemetry</Tag>
+                    <Tag tone="offer">Micro-strain hardware</Tag>
+                    <Tag tone="need">Needs: Robotics testbed</Tag>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <footer className="feed-card-actions">
+              <button onClick={() => showToast("Following Marcus's project updates")}>
+                <Icon name="plus" /> Follow project
+              </button>
+              <button onClick={() => showToast("Opened comments")}>
+                <Icon name="message" /> Comment (5)
+              </button>
+              <button onClick={() => showToast("Project link copied!")}>
+                <Icon name="send" /> Share
+              </button>
+            </footer>
+          </article>
         </section>
 
         <aside className="home-right">
@@ -3214,9 +3337,10 @@ export function HomeView({
               </div>
             </div>
             {[
-              ["SC", "blue", "Sam Chen", "Computational biology", "Python · Genomics"],
-              ["NP", "teal", "Nina Patel", "Clinical neuroscience", "EEG · fMRI"],
-              ["EO", "violet", "Eli Okafor", "Privacy and security", "DP · Formal methods"],
+              ["EC", "violet", "Emily Chen", "Computer Vision & Multimodal AI", "SAM 3.1 · Digital Pathology"],
+              ["MV", "teal", "Marcus Vance", "Bioengineering & Biomechanics", "Wireless Telemetry · Micro-Strain"],
+              ["DM", "blue", "David Miller", "Computational Biology & Genomics", "Single-Cell · Python · Nextflow"],
+              ["RA", "gold", "Rachel Adams", "Aerospace & Strain Sensing", "Conductive Elastomers · FEA"],
             ].map(([initials, color, name, role, skills]) => (
               <div className="person-suggestion" key={name}>
                 <Avatar initials={initials} color={color} />
@@ -3953,7 +4077,7 @@ export function ProductOverlay({
                 <Avatar initials="AM" color="gold" active />
                 <div className="reveal-meta">
                   <h3>Aria Malik</h3>
-                  <span>MSCS · UC Berkeley</span>
+                  <span>MSCS · RIT</span>
                   <Tag tone="stage">Identity Revealed by You</Tag>
                 </div>
               </div>
@@ -3961,9 +4085,9 @@ export function ProductOverlay({
                 <Icon name={revealAccepted ? "check" : "lock"} size={16} />
               </div>
               <div className={`reveal-card ${revealAccepted ? "revealed" : "blurred"}`}>
-                <Avatar initials={revealAccepted ? "JH" : "??"} color="gold" active={revealAccepted} />
+                <Avatar initials={revealAccepted ? "JL" : "??"} color="gold" active={revealAccepted} />
                 <div className="reveal-meta">
-                  <h3>{revealAccepted ? "Jordan Hayes" : "Anonymous Researcher"}</h3>
+                  <h3>{revealAccepted ? "Jordan Lee" : "Anonymous Researcher"}</h3>
                   <span>{revealAccepted ? "PhD Researcher · Helen Wills Neuroscience Institute" : "Cognitive Neuroscience · 0.4 miles away"}</span>
                   <Tag tone={revealAccepted ? "verification" : "need"}>
                     {revealAccepted ? "Mutual Consent Verified" : "Awaiting Your Acceptance"}
@@ -4007,7 +4131,7 @@ export function ProductOverlay({
                 <dl>
                   <div>
                     <dt>Owner</dt>
-                    <dd>Aria Malik (UC Berkeley)</dd>
+                    <dd>Aria Malik (RIT)</dd>
                   </div>
                   <div>
                     <dt>Timestamp</dt>
@@ -4352,7 +4476,7 @@ export function ProductOverlay({
 // --- ROOT APPLICATION COMPONENT ---
 
 export default function App() {
-  const [authed, setAuthed] = useState(true)
+  const [authed, setAuthed] = useState(false)
   const [view, setView] = useState<View>("home")
   const [telemetry, setTelemetry] = useState(false)
   const [telemetryPrompt, setTelemetryPrompt] = useState<string | undefined>()

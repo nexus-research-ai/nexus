@@ -1291,3 +1291,14 @@ select:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px soli
   .research-chat-page .chat-composer-area { padding: 10px 16px 16px; }
   .research-chat-panel .chat-header span { max-width: 155px; }
 }
+.graph-view-navigation { flex-wrap: wrap; gap: 10px; }
+@media (max-width: 700px) {
+  .global-header { backdrop-filter: none; }
+  .header-actions > .header-nav-button { display: flex; min-width: 32px; }
+  .header-actions { gap: 0; padding-left: 0; }
+  .global-header .global-search { flex: 1; min-width: 0; padding: 0 8px; }
+  .global-header .global-search input { min-width: 0; }
+  .global-header .nexus-logo { width: 90px; }
+  .global-header .header-nav-button.notification { min-width: 32px; }
+  .global-header .me-button { min-width: 36px; width: 36px; height: 36px; }
+}
