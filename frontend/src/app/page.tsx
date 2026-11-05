@@ -271,20 +271,20 @@ export function Avatar({
   imageUrl?: string
 }) {
   const resolvedUrl = imageUrl || avatarMap[initials]
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const showImage = Boolean(resolvedUrl && resolvedUrl !== failedUrl)
 
   return (
     <span
       className={`avatar avatar-${color} ${active ? "is-active" : ""}`}
-      style={resolvedUrl ? { padding: 0, overflow: "hidden", background: "#e2e8f0" } : undefined}
+      style={showImage ? { padding: 0, overflow: "hidden", background: "#e2e8f0" } : undefined}
     >
-      {resolvedUrl ? (
+      {showImage ? (
         <img
           src={resolvedUrl}
           alt={initials}
           style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%", display: "block" }}
-          onError={(e) => {
-            (e.target as HTMLElement).style.display = "none"
-          }}
+          onError={() => setFailedUrl(resolvedUrl)}
         />
       ) : (
         initials
