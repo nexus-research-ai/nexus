@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import GraphViewer from "@/components/GraphViewer"
 import FundingBrowser from "@/components/FundingBrowser"
 import ResearchAssistant from "@/components/ResearchAssistant"
+import DemoCommunityFeed from "@/components/DemoCommunityFeed"
+import { currentDemoProfileId, defaultAvailability, projectOwners, type CollaborationAvailability } from "@/lib/demo"
+import { useLocalState } from "@/lib/useLocalState"
+import { safeOrigin } from "@/lib/editor"
 
 export type View = "home" | "campus" | "literature" | "vault" | "pod" | "proof" | "graph"
 export const mainNavKeys: View[] = ["home", "campus", "literature", "vault", "graph"]
@@ -361,7 +365,7 @@ export const viewMeta: Record<View, {
   literature: {
     label: "Literature Search",
     icon: "search",
-    subtitle: "Search peer-reviewed papers and sources",
+    subtitle: "Search imported paper metadata",
   },
   vault: {
     label: "Vault",
@@ -391,8 +395,8 @@ export const initialProjects = [
   {
     stage: "PROTOTYPE",
     color: "blue",
-    degree: "PhD",
-    dept: "EECS · Helen Wills Neuroscience",
+    degree: "MSCS",
+    dept: "Computer Science · RIT",
     title: "Cross-subject latent alignment for non-invasive EEG decoding",
     body: "We train subject-specific adapters into a shared geometry. Looking for teams with 64+ channel longitudinal datasets to benchmark calibration speed.",
     offer: ["Optimal transport", "Adapter weights", "PyTorch codebase", "DP auditing"],
@@ -468,7 +472,9 @@ export const initialProjects = [
     offer: ["ASIC tape-outs", "FPGA acceleration", "Cryogenic test setups"],
     need: ["Spike-based EEG data", "Low-power algorithm partners", "Clinical verification"],
   },
-]
+].map((project, index) => ({ ...project, ...projectOwners[index], updatedDaysAgo: [2, 5, 1, 4, 0, 3, 7, 6][index], demoViews: [184, 126, 207, 95, 248, 162, 113, 84][index] }))
+
+const recommendedProjects = initialProjects.filter(project => project.ownerId !== currentDemoProfileId)
 
 export const initialPapers = [
   {
@@ -714,7 +720,7 @@ export const initialPapers = [
 ]
 
 export const searchCatalog = [
-  { type: "person", title: "Jordan Lee", subtitle: "PhD Candidate · Cognitive Neuroscience · Helen Wills Institute", meta: "0.4 miles away · Active now", view: "campus" },
+  { type: "person", title: "Jordan Lee", subtitle: "PhD Candidate · Cognitive Neuroscience · Helen Wills Institute", meta: "External partner · Demo profile", view: "campus" },
   { type: "person", title: "Maya Rodriguez", subtitle: "Postdoc · Robotics & Autonomous Systems", meta: "Pod Member · Active now", view: "pod" },
   { type: "person", title: "Jon Lee", subtitle: "PhD Candidate · Systems & Privacy · EECS", meta: "Pod Member · In Proposal Studio", view: "proof" },
   { type: "person", title: "Prof. Sarah Rao", subtitle: "Associate Professor · Computational Precision Health", meta: "Faculty Advisor", view: "campus" },
@@ -739,7 +745,7 @@ export function ProfileModal({ onClose, onNavigate }: { onClose: () => void; onN
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h3>Researcher Profile</h3>
+          <h3>Researcher Profile · Demo</h3>
           <button className="icon-button" onClick={onClose}><Icon name="close" /></button>
         </div>
         <div className="modal-body">
@@ -748,7 +754,7 @@ export function ProfileModal({ onClose, onNavigate }: { onClose: () => void; onN
             <div>
               <h2 style={{ margin: "0 0 4px", fontSize: 20 }}>Aria Malik</h2>
               <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>MS Computer Science · RIT</p>
-              <small style={{ color: "var(--teal)", fontWeight: 600 }}>Hardware Sealed Key: 0x9f2a...7c01</small>
+              <small style={{ color: "var(--teal)", fontWeight: 600 }}>Demo profile · Neural Commons workspace</small>
             </div>
           </div>
           <div>
@@ -759,11 +765,11 @@ export function ProfileModal({ onClose, onNavigate }: { onClose: () => void; onN
             </p>
           </div>
           <div>
-            <strong>Protected Ideas in Private Vault (3)</strong>
+            <strong>Private Vault · 3 example ideas</strong>
             <ul style={{ margin: "6px 0 0", paddingLeft: 20, fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
-              <li>NX-8492: Federated adaptation layer for latent EEG alignment (Sealed on-chain)</li>
+              <li>NX-8492: Federated adaptation layer for latent EEG alignment (Demo record)</li>
               <li>NX-7110: Orthogonal subspace projection with bounded DP noise (Drafting)</li>
-              <li>NX-6084: Dual opt-in identity discovery protocol (Peer verified)</li>
+              <li>NX-6084: Dual opt-in identity discovery protocol (Example protocol)</li>
             </ul>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -829,14 +835,14 @@ export function ViewsModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-export function AvailabilityModal({ onClose, onSave }: { onClose: () => void; onSave: (msg: string) => void }) {
-  const [capstone, setCapstone] = useState(true)
-  const [coauthor, setCoauthor] = useState(true)
-  const [mentor, setMentor] = useState(false)
-  const [equipment, setEquipment] = useState(false)
+export function AvailabilityModal({ onClose, onSave, initial }: { onClose: () => void; onSave: (value: CollaborationAvailability) => void; initial: CollaborationAvailability }) {
+  const [capstone, setCapstone] = useState(initial.capstone)
+  const [coauthor, setCoauthor] = useState(initial.coauthor)
+  const [mentor, setMentor] = useState(initial.mentor)
+  const [equipment, setEquipment] = useState(initial.equipment)
 
   const handleSave = () => {
-    onSave("Availability settings updated successfully!")
+    onSave({ capstone, coauthor, mentor, equipment })
     onClose()
   }
 
@@ -931,15 +937,15 @@ export function SavedResearchModal({ onClose, onNavigate }: { onClose: () => voi
 }
 
 export function PostComposerModal({ onClose, onPublish }: { onClose: () => void; onPublish: (post: any) => void }) {
-  const [title, setTitle] = useState("")
-  const [body, setBody] = useState("")
-  const [dept, setDept] = useState("EECS · AI Research")
+  const [title, setTitle] = useState("Privacy-preserving EEG collaboration")
+  const [body, setBody] = useState("I’m building a federated EEG baseline at RIT and looking for a partner with longitudinal recordings. I can contribute PyTorch training, representation alignment, and a reproducible evaluation plan.")
+  const [dept, setDept] = useState("Computer Science · RIT")
   const [stage, setStage] = useState("PROTOTYPE")
   const [offer, setOffer] = useState("Federated learning, PyTorch")
-  const [need, setNeed] = useState("EEG dataset, Clinical trials")
+  const [need, setNeed] = useState("Longitudinal EEG dataset, Methods feedback")
 
   const handlePublish = () => {
-    if (!title.trim() && !body.trim()) return
+    if (!title.trim() || !body.trim()) return
     onPublish({
       author: "Aria Malik",
       dept: "MSCS · " + dept,
@@ -1004,7 +1010,7 @@ export function PostComposerModal({ onClose, onPublish }: { onClose: () => void;
         </div>
         <div className="modal-foot">
           <button className="soft-button" onClick={onClose}>Cancel</button>
-          <button className="accent-button" onClick={handlePublish}>Publish to Feed</button>
+          <button className="accent-button" disabled={!title.trim() || !body.trim()} onClick={handlePublish}>Publish to Feed</button>
         </div>
       </div>
     </div>
@@ -1211,27 +1217,27 @@ export function AppFrame({
   const [meOpen, setMeOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const [notifications, setNotifications] = useState([
+  const [notifications, setNotifications] = useLocalState("nexus.demo.notifications", [
     {
       id: "1",
-      title: "Citation Verified in §2.1",
-      desc: "Maya confirmed SAM 3.1 polygon match for Figure 4b in Nature MI paper.",
+      title: "New dataset collaboration",
+      desc: "Jordan Lee added a mobile EEG data dictionary to the demo workspace.",
       time: "2 min ago",
       unread: true,
-      actionView: "proof" as View,
+      actionView: "campus" as View,
     },
     {
       id: "2",
-      title: "Mutual Match Request Accepted",
-      desc: "Jordan Lee (Helen Wills EEG Lab) accepted your private connection.",
+      title: "Private connection walkthrough",
+      desc: "Review how you and Jordan Lee can exchange interests before a mutual introduction.",
       time: "18 min ago",
       unread: true,
       actionOverlay: "reveal" as Overlay,
     },
     {
       id: "3",
-      title: "NIH R21 Funding Window Open",
-      desc: "Smart & Connected Health solicitation matches 8 of 10 pod capabilities.",
+      title: "Funding to review with your team",
+      desc: "Compare the NSF, NIH, and DARPA example opportunities and check eligibility.",
       time: "2h ago",
       unread: true,
       actionOverlay: "funding" as Overlay,
@@ -1707,7 +1713,7 @@ export function PodView({
                     <p>{paper.authors}</p>
                     <div className="paper-meta">
                       <Avatar initials={paper.person} color={paper.color} />
-                      <span>Added by {paper.person === "MK" ? "Maya" : paper.person === "JL" ? "Jon" : "Aria"}</span>
+                      <span>Added by {paper.person === "MK" ? "Maya" : paper.person === "JL" ? "Jordan" : "Aria"}</span>
                     </div>
                   </div>
                   <button
@@ -2232,7 +2238,7 @@ export function VaultView({
               </span>
               <div>
                 <Tag tone="stage">PROTOTYPE</Tag>
-                <small>{audience === "Stranger" ? "RIT Researcher" : "Aria Malik · EECS & Neuroscience"}</small>
+                <small>{audience === "Stranger" ? "RIT Researcher" : "Aria Malik · Computer Science · RIT"}</small>
               </div>
             </div>
             <h3>
@@ -2305,6 +2311,7 @@ export function AuthView({ onLogin }: { onLogin: () => void }) {
         </div>
         <h1 style={{ textAlign: "center" }}>{mode === "login" ? "Log in to Nexus" : "Create your Nexus account"}</h1>
         <p style={{ textAlign: "center" }}>{mode === "login" ? "Welcome back. Enter your details to continue." : "Join the campus research network."}</p>
+        <p className="demo-login-note">Demo workspace · Changes are saved in this browser.</p>
         <form onSubmit={submit}>
           {mode === "signup" && (
             <div className="auth-field">
@@ -2349,6 +2356,21 @@ type LiteratureResult = {
   origin: string
   score: number
   reason: string
+  evidence_kind?: "public" | "synthetic"
+  source_url?: string
+}
+
+type LiteratureSearchSnapshot = {
+  query: string
+  savedAt: string
+  items: LiteratureResult[]
+  corpus: string
+  corpusSize: number
+  example?: boolean
+}
+const literatureHistoryKey = "nexus.literature-search-history.v1"
+function validLiteratureItems(value: unknown): value is LiteratureResult[] {
+  return Array.isArray(value) && value.every(item => item && typeof item.id === "string" && typeof item.title === "string" && typeof item.text === "string" && typeof item.origin === "string" && typeof item.snippet === "string" && Array.isArray(item.authors) && item.authors.every((author: unknown) => typeof author === "string"))
 }
 
 export function LiteratureView({
@@ -2360,26 +2382,106 @@ export function LiteratureView({
 }) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<LiteratureResult[]>([])
+  const [corpusInfo, setCorpusInfo] = useState<{ corpus: string; size: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [openPaper, setOpenPaper] = useState<LiteratureResult | null>(null)
   const [shortlisted, setShortlisted] = useState<Record<string, boolean>>({})
+  const [history, setHistory] = useState<LiteratureSearchSnapshot[]>([])
+  const [activeQuery, setActiveQuery] = useState("")
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const [storageNote, setStorageNote] = useState("")
+  const [searchError, setSearchError] = useState("")
+  const historyRef = useRef<LiteratureSearchSnapshot[]>([])
+  const requestRef = useRef<AbortController | null>(null)
+  const interactionRef = useRef(0)
 
-  const runSearch = useCallback(async (q: string) => {
-    if (!q.trim()) return
+  const saveHistory = useCallback((entries: LiteratureSearchSnapshot[]) => {
+    const next = entries.slice(0, 10)
+    historyRef.current = next
+    setHistory(next)
+    try { localStorage.setItem(literatureHistoryKey, JSON.stringify(next)) }
+    catch { setStorageNote("Browser storage is unavailable. These searches will last for this session only.") }
+  }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    let cancelled = false
+    let hasSavedHistory = false
+    try {
+      const saved = localStorage.getItem(literatureHistoryKey)
+      hasSavedHistory = saved !== null
+      if (saved !== null) {
+        const parsed: unknown = JSON.parse(saved)
+        const entries = Array.isArray(parsed) ? parsed.filter((entry): entry is LiteratureSearchSnapshot => Boolean(entry && typeof entry.query === "string" && typeof entry.savedAt === "string" && typeof entry.corpus === "string" && typeof entry.corpusSize === "number" && Number.isFinite(entry.corpusSize) && validLiteratureItems(entry.items))).slice(0, 10) : []
+        historyRef.current = entries
+        setHistory(entries)
+      }
+    } catch { setStorageNote("Previous searches could not be read from browser storage.") }
+    if (hasSavedHistory) { setHistoryLoading(false); return () => { requestRef.current?.abort() } }
+    const generation = interactionRef.current
+    void Promise.allSettled(["artificial intelligence", "federated learning", "privacy"].map(async term => {
+      const response = await fetch(`/api/v1/literature/search?q=${encodeURIComponent(term)}&limit=10`, { signal: controller.signal })
+      if (!response.ok) throw new Error("Example search unavailable")
+      const data = await response.json()
+      if (!validLiteratureItems(data.items) || !data.items.length) throw new Error("No imported evidence available")
+      return { query: term, savedAt: new Date().toISOString(), items: data.items, corpus: String(data.corpus || ""), corpusSize: Number(data.corpus_size) || 0, example: true } satisfies LiteratureSearchSnapshot
+    })).then(outcomes => {
+      if (cancelled) return
+      if (interactionRef.current === generation) {
+        const entries = outcomes.flatMap(outcome => outcome.status === "fulfilled" ? [outcome.value] : [])
+        if (entries.length) saveHistory(entries)
+      }
+      setHistoryLoading(false)
+    })
+    return () => { cancelled = true; controller.abort(); requestRef.current?.abort() }
+  }, [saveHistory])
+
+  const runSearch = useCallback(async (text: string) => {
+    const term = text.trim()
+    if (!term) return
+    interactionRef.current += 1
+    requestRef.current?.abort()
+    const controller = new AbortController()
+    requestRef.current = controller
     setLoading(true)
     setSearched(true)
+    setSearchError("")
+    setOpenPaper(null)
+    setResults([])
+    setCorpusInfo(null)
+    setQuery(term)
+    setActiveQuery(term)
     try {
-      const res = await fetch(`/api/v1/literature/search?q=${encodeURIComponent(q.trim())}&limit=10`)
-      const data = await res.json()
-      setResults(data.items || [])
-    } catch {
-      showToast("Couldn't reach the literature search service")
-      setResults([])
+      const response = await fetch(`/api/v1/literature/search?q=${encodeURIComponent(term)}&limit=10`, { signal: controller.signal })
+      if (!response.ok) throw new Error("Literature search is unavailable. Try again in a moment.")
+      const data = await response.json()
+      if (!validLiteratureItems(data.items)) throw new Error("The search service returned an unexpected response.")
+      if (controller.signal.aborted) return
+      setResults(data.items)
+      setCorpusInfo({ corpus: data.corpus || "", size: Number(data.corpus_size) || 0 })
+      const snapshot: LiteratureSearchSnapshot = { query: term, savedAt: new Date().toISOString(), items: data.items, corpus: String(data.corpus || ""), corpusSize: Number(data.corpus_size) || 0 }
+      saveHistory([snapshot, ...historyRef.current.filter(entry => entry.query.toLowerCase() !== term.toLowerCase())])
+    } catch (error) {
+      if (!controller.signal.aborted) setSearchError(error instanceof Error ? error.message : "Couldn't reach the literature search service.")
     } finally {
-      setLoading(false)
+      if (!controller.signal.aborted) { setLoading(false); requestRef.current = null }
     }
-  }, [showToast])
+  }, [saveHistory])
+
+  const reopenSearch = (entry: LiteratureSearchSnapshot) => {
+    interactionRef.current += 1
+    requestRef.current?.abort()
+    requestRef.current = null
+    setLoading(false)
+    setSearchError("")
+    setQuery(entry.query)
+    setActiveQuery(entry.query)
+    setResults(entry.items)
+    setCorpusInfo({ corpus: entry.corpus, size: entry.corpusSize })
+    setSearched(true)
+    setOpenPaper(null)
+  }
 
   return (
     <div className="view literature-view">
@@ -2396,10 +2498,20 @@ export function LiteratureView({
       <section style={{ marginBottom: 20 }}>
         <h1 style={{ margin: "0 0 6px", fontSize: 26 }}>Literature & Evidence Search</h1>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 14 }}>
-          Search peer-reviewed papers and researcher sources across the sample research corpus.
+          Search imported paper titles and abstracts. Read the original source before relying on a claim.
         </p>
       </section>
 
+      <div className="literature-workspace">
+      <aside className="literature-history" aria-label="Recent literature searches">
+        <div className="literature-history-heading"><h2>Recent searches</h2><button className="text-button" onClick={() => { interactionRef.current += 1; requestRef.current?.abort(); setLoading(false); setQuery(""); setActiveQuery(""); setResults([]); setCorpusInfo(null); setSearched(false); setSearchError(""); setOpenPaper(null) }}>New search</button></div>
+        <div className="literature-history-items">{history.map(entry => <button key={entry.query.toLowerCase()} className={`literature-history-item ${activeQuery.toLowerCase() === entry.query.toLowerCase() ? "active" : ""}`} aria-pressed={activeQuery.toLowerCase() === entry.query.toLowerCase()} onClick={() => reopenSearch(entry)}><strong>{entry.query}</strong><span className="literature-history-meta">{entry.items.length} saved results · {new Date(entry.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>{entry.example && <small>Example search</small>}</button>)}</div>
+        {historyLoading && <p className="literature-history-note" role="status">Loading previous searches…</p>}
+        {!historyLoading && !history.length && <p className="literature-history-note">Your searches will appear here after you search.</p>}
+        <p className="literature-history-note">Saved in this browser with the abstracts and source links returned at search time.</p>
+        {storageNote && <p className="literature-error" role="status">{storageNote}</p>}
+      </aside>
+      <section className="literature-main" aria-label="Literature results">
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -2412,6 +2524,7 @@ export function LiteratureView({
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search imported papers"
           placeholder="Search research topics, keywords, authors…"
         />
         <button type="submit" className="accent-button" disabled={loading}>
@@ -2419,16 +2532,20 @@ export function LiteratureView({
         </button>
       </form>
 
-      {searched && !loading && results.length === 0 && (
-        <p style={{ color: "var(--muted)", fontSize: 13 }}>No matches in the sample corpus. Try different terms.</p>
+      {searchError && <p className="literature-error" role="alert">{searchError}</p>}
+      {loading && <p role="status">Searching imported papers…</p>}
+      {!searched && <p className="literature-history-note">Search a topic or reopen a previous search to review its saved evidence.</p>}
+      {searched && !loading && !searchError && results.length === 0 && (
+        <p style={{ color: "var(--muted)", fontSize: 13 }}>No matching imported papers. Try different terms.</p>
       )}
 
+      {searched && corpusInfo?.corpus === "imported_public_papers" && <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>{results.length} results shown · {corpusInfo.size.toLocaleString()} imported papers · Source metadata has not been independently verified.</p>}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {results.map((paper) => (
           <article key={paper.id} className="feed-card clean-card">
             <header className="feed-card-header">
               <Tag tone="stage">Paper</Tag>
-              <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>Sample corpus</span>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>{paper.evidence_kind === "public" ? "Imported public source" : "Example record"}</span>
             </header>
             <div style={{ padding: "4px 15px 12px", boxSizing: "border-box", overflowWrap: "break-word", wordBreak: "break-word" }}>
               <h2 style={{ margin: "0 0 6px", fontSize: 17 }}>{paper.title}</h2>
@@ -2440,8 +2557,9 @@ export function LiteratureView({
             </div>
             <footer className="feed-card-actions">
               <button onClick={() => setOpenPaper(paper)}>
-                <Icon name="book" /> Read full text
+                <Icon name="book" /> Read abstract
               </button>
+              {safeOrigin(paper.source_url || paper.origin) && <a href={safeOrigin(paper.source_url || paper.origin)} target="_blank" rel="noopener noreferrer" className="text-button" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, padding: "8px 10px" }}><Icon name="arrow" size={14} /> View source</a>}
               <button
                 className={shortlisted[paper.id] ? "connected" : ""}
                 onClick={() => {
@@ -2459,6 +2577,9 @@ export function LiteratureView({
         ))}
       </div>
 
+      </section>
+      </div>
+
       {openPaper && (
         <div className="modal-backdrop" onClick={() => setOpenPaper(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -2468,7 +2589,10 @@ export function LiteratureView({
             </div>
             <div className="modal-body" style={{ overflowWrap: "break-word", wordBreak: "break-word" }}>
               <p style={{ fontSize: 12, color: "var(--muted)" }}>{openPaper.authors.join(", ")} · {openPaper.department}</p>
+              <Tag tone="stage">{openPaper.evidence_kind === "public" ? "Imported abstract" : "Example text"}</Tag>
               <p style={{ fontSize: 13, lineHeight: 1.6 }}>{openPaper.text}</p>
+              {safeOrigin(openPaper.source_url || openPaper.origin) && <a href={safeOrigin(openPaper.source_url || openPaper.origin)} target="_blank" rel="noopener noreferrer" className="text-button">View original source ↗</a>}
+              <small style={{ color: "var(--muted)" }}>Imported metadata and abstracts are not an independent verification of publication status or research claims.</small>
             </div>
           </div>
         </div>
@@ -2523,23 +2647,26 @@ export function CampusView({
   const [sortOrder, setSortOrder] = useState<"best" | "recent" | "views">("best")
 
   const filtered = useMemo(() => {
-    return initialProjects.filter((p) => {
-      const q = query.toLowerCase()
+    const matches = recommendedProjects.filter((p) => {
+      const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean).map(term => term.replace(/s$/, ""))
       const searchable = (
         p.title + " " +
         p.body + " " +
-        p.dept + " " +
+        p.dept + " " + p.owner + " " + p.resource + " " +
         (p.offer || []).join(" ") + " " +
         (p.need || []).join(" ")
       ).toLowerCase()
-      const matchesQuery = searchable.includes(q)
+      const matchesQuery = terms.every(term => searchable.includes(term))
       if (activePill === "All campus") return matchesQuery
       if (activePill === "EECS") return matchesQuery && p.dept.includes("EECS")
       if (activePill === "Neuroscience") return matchesQuery && p.dept.includes("Neuroscience")
       if (activePill === "Prototype") return matchesQuery && p.stage.toUpperCase() === "PROTOTYPE"
       return matchesQuery
     })
-  }, [query, activePill])
+    if (sortOrder === "recent") return [...matches].sort((a, b) => a.updatedDaysAgo - b.updatedDaysAgo)
+    if (sortOrder === "views") return [...matches].sort((a, b) => b.demoViews - a.demoViews)
+    return matches
+  }, [query, activePill, sortOrder])
 
   return (
     <div className="view campus-view">
@@ -2556,7 +2683,7 @@ export function CampusView({
       <section className="campus-hero">
         <div className="campus-title">
           <div className="eyebrow">
-            <span className="live-dot" /> 1,284 ACTIVE PROJECTS AT RIT
+            <span className="live-dot" /> CAMPUS & PARTNER PROJECTS · DEMO CATALOG
           </div>
           <h1>
             Find the people and projects<br />
@@ -2583,7 +2710,7 @@ export function CampusView({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Try “EEG datasets”, “robotics collaborator”, or “NIH R21”…"
+            aria-label="Search collaborators and datasets" placeholder="Try “datasets”, “EEG”, or “privacy”…"
           />
           <kbd>⌘ K</kbd>
         </div>
@@ -2596,7 +2723,7 @@ export function CampusView({
               showToast(`Filtered by: ${pill}`)
             }}
           >
-            {pill} {pill === "All campus" && <span>1,284</span>}
+            {pill} {pill === "All campus" && <span>{recommendedProjects.length}</span>}
           </button>
         ))}
         <button
@@ -2628,37 +2755,7 @@ export function CampusView({
             </button>
           </div>
 
-          {query.trim() && (
-            <div className="matched-collaborators-bar clean-card" style={{ marginBottom: 16, padding: "12px 16px", background: "#f8fafc", border: "1px solid var(--line)", borderRadius: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <Icon name="spark" size={16} />
-                <strong style={{ fontSize: 13, color: "var(--ink)" }}>Campus Researchers with Matched Assets ("{query}")</strong>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10 }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", background: "white", borderRadius: 8, border: "1px solid var(--line)" }}>
-                  <Avatar initials="JL" color="gold" active />
-                  <div>
-                    <strong style={{ fontSize: 12, display: "block" }}>Jordan Lee</strong>
-                    <span style={{ fontSize: 11, color: "var(--muted)" }}>128-channel Longitudinal Mobile EEG Dataset</span>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", background: "white", borderRadius: 8, border: "1px solid var(--line)" }}>
-                  <Avatar initials="EC" color="violet" active />
-                  <div>
-                    <strong style={{ fontSize: 12, display: "block" }}>Emily Chen</strong>
-                    <span style={{ fontSize: 11, color: "var(--muted)" }}>Histopathology Microscopy Dataset · CV Lab</span>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", background: "white", borderRadius: 8, border: "1px solid var(--line)" }}>
-                  <Avatar initials="DM" color="blue" active />
-                  <div>
-                    <strong style={{ fontSize: 12, display: "block" }}>David Miller</strong>
-                    <span style={{ fontSize: 11, color: "var(--muted)" }}>Multi-Omics Single-Cell Dataset · Genomics</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {query.trim() && <div className="demo-search-summary" role="status"><strong>{filtered.length} matching {filtered.length === 1 ? "project" : "projects"}</strong><span>Matched against researcher names, project descriptions, available resources, and research needs.</span>{!filtered.length && <button className="text-button" onClick={() => setQuery("")}>Clear search</button>}</div>}
           <div className="project-grid">
             {filtered.map((project, i) => (
               <article className="project-card" key={project.title}>
@@ -2670,6 +2767,7 @@ export function CampusView({
                   />
                 </div>
                 <div className="project-card-body">
+                  <div className="demo-project-owner"><Avatar initials={project.initials} /><span><b>{project.owner}</b><small>{project.resource}</small></span></div>
                   <div>
                     <Tag tone="stage">{project.stage}</Tag>
                     <span className="degree">{project.degree}</span>
@@ -2691,7 +2789,7 @@ export function CampusView({
                   </div>
                   <footer>
                     <span>
-                      <Icon name="clock" size={14} /> Updated {i + 1}d ago
+                      <Icon name="clock" size={14} /> {project.updatedDaysAgo === 0 ? "Updated today" : `Updated ${project.updatedDaysAgo}d ago`} · {project.demoViews} demo views
                     </span>
                     <button onClick={() => openOverlay("reveal")}>
                       View project <Icon name="arrow" size={15} />
@@ -2750,7 +2848,7 @@ export function CampusView({
             <div className="proximity">
               <Icon name="pin" />
               <span>
-                <b>0.4 miles away</b>Helen Wills Neuroscience Institute
+                <b>External research partner</b>Mobile EEG research lab
               </span>
             </div>
             <button
@@ -2771,7 +2869,7 @@ export function CampusView({
               )}
             </button>
             <small className="privacy-note">
-              <Icon name="lock" size={12} /> Identity and work reveal only after both accept
+              <Icon name="lock" size={12} /> Confidential project details require mutual acceptance
             </small>
           </article>
           <button className="seal-prompt" onClick={() => setView("vault")}>
@@ -2802,6 +2900,7 @@ export function HomeView({
   openComposer,
   openCharter,
   newPosts,
+  availability,
   onDeletePost,
 }: {
   setView: (view: View) => void
@@ -2814,13 +2913,19 @@ export function HomeView({
   openSaved: () => void
   openComposer: () => void
   openCharter: () => void
+  availability: CollaborationAvailability
   newPosts: any[]
   onDeletePost: (id: string) => void
 }) {
-  const [connected, setConnected] = useState(false)
+  const [connected, setConnected] = useLocalState("nexus.demo.connection-requested", false)
   const [followingProject, setFollowingProject] = useState(false)
   const [sortOrder, setSortOrder] = useState<"relevant" | "recent">("relevant")
-  const [followingPeople, setFollowingPeople] = useState<Record<string, boolean>>({})
+  const [followingPeople, setFollowingPeople] = useLocalState<Record<string, boolean>>("nexus.demo.following-people", {})
+  const sortedPosts = useMemo(() => {
+    if (sortOrder === "recent") return newPosts
+    const relevance = (post: any) => ((post.title + " " + post.body + " " + (post.offer || []).join(" ") + " " + (post.need || []).join(" ")).match(/EEG|federated|privacy|alignment/gi) || []).length
+    return [...newPosts].sort((a, b) => relevance(b) - relevance(a))
+  }, [newPosts, sortOrder])
 
   // Dropdown states
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
@@ -2887,9 +2992,9 @@ export function HomeView({
           <section className="availability-card clean-card">
             <div>
               <span className="availability-dot" />
-              <strong>Open to collaborate</strong>
+              <strong>{Object.values(availability).some(Boolean) ? "Open to collaborate" : "Not currently available"}</strong>
             </div>
-            <p>Capstone teams · Co-authoring</p>
+            <p>{[availability.capstone && "Capstone teams", availability.coauthor && "Co-authoring", availability.mentor && "Mentorship", availability.equipment && "Equipment exchange"].filter(Boolean).join(" · ") || "Update your preferences when you’re ready."}</p>
             <button onClick={openAvailability}>Edit availability</button>
           </section>
 
@@ -2946,7 +3051,7 @@ export function HomeView({
             </button>
           </div>
 
-          {newPosts.map((post, idx) => (
+          {sortedPosts.map((post, idx) => (
             <article className="feed-card clean-card project-post" key={post.id ?? idx}>
               <header className="feed-card-header">
                 <Avatar initials={(post.author || "You").split(" ").map((n: string) => n[0]).join("").slice(0, 2)} color="gold" active />
@@ -3044,7 +3149,7 @@ export function HomeView({
                 <div>
                   <h2>Jordan Lee</h2>
                   <p>PhD Researcher in Cognitive Neuroscience</p>
-                  <span>Helen Wills Neuroscience Institute · 0.4 miles</span>
+                  <span>EEG research lab · External partner</span>
                 </div>
                 <div className="simple-match-score">
                   <b>96%</b>
@@ -3074,7 +3179,8 @@ export function HomeView({
                     openOverlay("reveal")
                   } else {
                     setConnected(true)
-                    showToast("Private interest sent to Jordan Lee! Awaiting mutual reveal.")
+                    openOverlay("reveal")
+                    showToast("Private interest recorded. Review the demo introduction.")
                   }
                 }}
               >
@@ -3084,7 +3190,7 @@ export function HomeView({
               <button onClick={() => onTelemetry("Question for Jordan Lee regarding 128-channel mobile EEG lab calibration protocols:")}>
                 <Icon name="message" /> Ask a question
               </button>
-              <small>Profiles reveal only after both people accept</small>
+              <small>Confidential project details require mutual acceptance</small>
             </footer>
           </article>
 
@@ -3200,86 +3306,7 @@ export function HomeView({
             )}
           </article>
 
-          {/* Emily Chen Post */}
-          <article className="feed-card clean-card project-post">
-            <header className="feed-card-header">
-              <Avatar initials="EC" color="violet" active />
-              <div>
-                <strong>Emily Chen</strong>
-                <span>PhD Student · Computer Vision & AI · Posted a project · 4h</span>
-              </div>
-            </header>
-            <div className="project-post-copy">
-              <p>Benchmarking zero-shot multimodal grounding on complex scientific figures using SAM 3.1. We isolate sub-panels, error bars, and axis labels directly from pre-print PDFs.</p>
-              <div className="project-post-panel">
-                <span className="project-post-art">
-                  <Icon name="spark" size={36} />
-                </span>
-                <div>
-                  <Tag tone="stage">PRE-PRINT</Tag>
-                  <h2>Pixel-to-Proof: Visual grounding of empirical claims with SAM 3.1</h2>
-                  <p>Looking for teams with digital pathology or neural spectrogram figures to expand our cross-domain evaluation benchmark.</p>
-                  <div>
-                    <Tag tone="offer">SAM 3.1 grounding</Tag>
-                    <Tag tone="offer">Zero-shot segmentation</Tag>
-                    <Tag tone="need">Needs: Pathology cohorts</Tag>
-                    <Tag tone="need">Needs: Grant figures</Tag>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <footer className="feed-card-actions">
-              <button onClick={() => showToast("Following Emily's project updates")}>
-                <Icon name="plus" /> Follow project
-              </button>
-              <button onClick={() => showToast("Opened comments")}>
-                <Icon name="message" /> Comment (3)
-              </button>
-              <button onClick={() => showToast("Project link copied!")}>
-                <Icon name="send" /> Share
-              </button>
-            </footer>
-          </article>
-
-          {/* Marcus Vance Post */}
-          <article className="feed-card clean-card project-post">
-            <header className="feed-card-header">
-              <Avatar initials="MV" color="teal" active />
-              <div>
-                <strong>Marcus Vance</strong>
-                <span>PhD Researcher · Bioengineering · Posted a project · 6h</span>
-              </div>
-            </header>
-            <div className="project-post-copy">
-              <p>Wireless micro-strain telemetry sensor array calibrated for multi-axial load tracking in soft tissue and continuous biomechanical feedback.</p>
-              <div className="project-post-panel">
-                <span className="project-post-art">
-                  <Icon name="brain" size={36} />
-                </span>
-                <div>
-                  <Tag tone="stage">PROTOTYPE</Tag>
-                  <h2>Synchronized multimodal telemetry for freely moving subjects</h2>
-                  <p>Seeking robotics actuation collaborators to benchmark sub-millimeter displacement tracking under cyclic load.</p>
-                  <div>
-                    <Tag tone="offer">Optical telemetry</Tag>
-                    <Tag tone="offer">Micro-strain hardware</Tag>
-                    <Tag tone="need">Needs: Robotics testbed</Tag>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <footer className="feed-card-actions">
-              <button onClick={() => showToast("Following Marcus's project updates")}>
-                <Icon name="plus" /> Follow project
-              </button>
-              <button onClick={() => showToast("Opened comments")}>
-                <Icon name="message" /> Comment (5)
-              </button>
-              <button onClick={() => showToast("Project link copied!")}>
-                <Icon name="send" /> Share
-              </button>
-            </footer>
-          </article>
+          <DemoCommunityFeed sortOrder={sortOrder} />
         </section>
 
         <aside className="home-right">
@@ -3995,7 +4022,7 @@ export function ProductOverlay({
 
   // Reveal state
   const [selectedPerson, setSelectedPerson] = useState("Jordan Lee")
-  const [revealAccepted, setRevealAccepted] = useState(false)
+  const [revealAccepted, setRevealAccepted] = useLocalState("nexus.demo.connection-jordan", false)
 
   // Project creator state
   const [ingestUrl, setIngestUrl] = useState("https://arxiv.org/abs/2403.11284")
@@ -4070,7 +4097,7 @@ export function ProductOverlay({
         {overlay === "reveal" && (
           <div className="reveal-flow">
             <p className="lead">
-              Profiles and confidential hypotheses reveal only when both researchers explicitly execute mutual consent.
+              Public research interests help you find a match. Confidential project details open after both researchers accept. This demo fixture includes Jordan’s prior acceptance; your choice completes the introduction locally.
             </p>
             <div className="reveal-people">
               <div className="reveal-card">
@@ -4078,19 +4105,19 @@ export function ProductOverlay({
                 <div className="reveal-meta">
                   <h3>Aria Malik</h3>
                   <span>MSCS · RIT</span>
-                  <Tag tone="stage">Identity Revealed by You</Tag>
+                  <Tag tone="stage">Public researcher profile</Tag>
                 </div>
               </div>
               <div className="reveal-link">
                 <Icon name={revealAccepted ? "check" : "lock"} size={16} />
               </div>
-              <div className={`reveal-card ${revealAccepted ? "revealed" : "blurred"}`}>
-                <Avatar initials={revealAccepted ? "JL" : "??"} color="gold" active={revealAccepted} />
+              <div className={`reveal-card ${revealAccepted ? "revealed" : ""}`}>
+                <Avatar initials="JL" color="gold" active={revealAccepted} />
                 <div className="reveal-meta">
-                  <h3>{revealAccepted ? "Jordan Lee" : "Anonymous Researcher"}</h3>
-                  <span>{revealAccepted ? "PhD Researcher · Helen Wills Neuroscience Institute" : "Cognitive Neuroscience · 0.4 miles away"}</span>
+                  <h3>Jordan Lee</h3>
+                  <span>PhD Researcher · Cognitive Neuroscience</span>
                   <Tag tone={revealAccepted ? "verification" : "need"}>
-                    {revealAccepted ? "Mutual Consent Verified" : "Awaiting Your Acceptance"}
+                    {revealAccepted ? "Demo introduction accepted" : "Jordan accepted · Your turn"}
                   </Tag>
                 </div>
               </div>
@@ -4109,10 +4136,10 @@ export function ProductOverlay({
                 className="accent-button"
                 onClick={() => {
                   setRevealAccepted(true)
-                  showToast("Mutual consent verified! Full profile & contact details unblurred.")
+                  showToast("Demo introduction accepted. Coordinate dataset access and permissions before sharing.")
                 }}
               >
-                {revealAccepted ? "Connection Established" : "Accept Connection & Reveal"}
+                {revealAccepted ? "Introduction Accepted" : "Accept Introduction"}
               </button>
             </div>
           </div>
@@ -4476,7 +4503,7 @@ export function ProductOverlay({
 // --- ROOT APPLICATION COMPONENT ---
 
 export default function App() {
-  const [authed, setAuthed] = useState(false)
+  const [authed, setAuthed] = useLocalState("nexus.demo.signed-in", false)
   const [view, setView] = useState<View>("home")
   const [telemetry, setTelemetry] = useState(false)
   const [telemetryPrompt, setTelemetryPrompt] = useState<string | undefined>()
@@ -4492,7 +4519,8 @@ export default function App() {
   const [addTeammateOpen, setAddTeammateOpen] = useState(false)
   const [addPaperOpen, setAddPaperOpen] = useState(false)
   const [charterOpen, setCharterOpen] = useState(false)
-  const [newPosts, setNewPosts] = useState<any[]>([])
+  const [newPosts, setNewPosts] = useLocalState<any[]>("nexus.demo.published-posts", [])
+  const [availability, setAvailability] = useLocalState<CollaborationAvailability>("nexus.demo.availability", defaultAvailability)
   const toastTimeoutRef = useRef<any>(null)
 
   const showToast = useCallback((msg: string) => {
@@ -4541,6 +4569,7 @@ export default function App() {
           openSaved={() => setSavedOpen(true)}
           openComposer={() => setComposerOpen(true)}
           openCharter={() => setCharterOpen(true)}
+          availability={availability}
           newPosts={newPosts}
           onDeletePost={(id) => setNewPosts((prev) => prev.filter((p) => p.id !== id))}
         />
@@ -4608,7 +4637,7 @@ export default function App() {
       {/* Rich Modals */}
       {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} onNavigate={setView} />}
       {viewsOpen && <ViewsModal onClose={() => setViewsOpen(false)} />}
-      {availOpen && <AvailabilityModal onClose={() => setAvailOpen(false)} onSave={showToast} />}
+      {availOpen && <AvailabilityModal initial={availability} onClose={() => setAvailOpen(false)} onSave={(value) => { setAvailability(value); showToast("Collaboration preferences saved") }} />}
       {savedOpen && <SavedResearchModal onClose={() => setSavedOpen(false)} onNavigate={setView} />}
       {composerOpen && (
         <PostComposerModal

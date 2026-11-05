@@ -1,0 +1,38 @@
+[000–020s | Motivation]
+Research collaboration is scattered. LinkedIn shows credentials, GitHub shows code, and published papers describe work that is already finished. But finding someone on campus who is working on a related problem, has the dataset you need, or wants your skills still takes introductions, email, and luck.
+
+[020–035s | Nexus thesis]
+Nexus brings current projects and research needs into one workspace. Discover people through what they are building, then move from shared interests toward collaboration. Here, we follow Aria Malik, a computer science graduate student at RIT.
+
+[035–045s | Demo login]
+We begin in the local demo workspace. Signing in opens Aria’s research feed, with her profile, active projects, suggested collaborators, and next steps together.
+
+[045–065s | Home and create post]
+Aria is building a privacy preserving EEG baseline. She can post the project with a clear description, the methods she can contribute, and the longitudinal recordings she needs. Publishing places that request in the feed, giving another researcher a specific reason to start a conversation.
+
+[065–085s | Profile and availability]
+Her profile connects those interests with a simple collaboration preference. Aria can review her research focus, then update her availability for project teams, coauthoring, mentorship, or shared equipment. Here, she adds undergraduate mentorship. The updated preference stays visible in her workspace, alongside her current research needs.
+
+[085–110s | Jordan private introduction]
+Jordan Lee offers mobile EEG recordings and is looking for help with federated learning. That complements Aria’s project. Their public interests explain the connection, while confidential project details require mutual acceptance. In this example, Jordan has already accepted an introduction. Aria reviews the invitation and accepts locally. The next step is to agree on dataset access and permitted use.
+
+[110–120s | People suggestions]
+The network extends beyond one match. Suggested researchers show their fields and skills, and Aria can follow someone whose work she wants to keep up with.
+
+[120–135s | Find collaborators datasets]
+Find Collaborators makes discovery more focused. Searching for datasets brings up projects with relevant resources, including EEG recordings, clinical cohorts, and single cell data. Each card names the researcher and shows what the project offers and needs.
+
+[135–150s | Literature search]
+Searching artificial intelligence explores the imported literature collection. Results include titles, authors, abstract excerpts, and original source links. Aria can read an abstract, shortlist a paper, and inspect its source before relying on a claim.
+
+[150–160s | Knowledge graph]
+The knowledge graph adds another view of the research landscape. Selecting a node reveals nearby researchers, papers, and topics, helping Aria explore connections across the collection.
+
+[160–170s | Funding]
+Funding brings example opportunities into the workspace. Aria can compare research areas and eligibility, then check the current agency solicitation before deciding what to pursue.
+
+[170–177s | Nexus AI and alerts]
+Nexus AI preserves research conversations and source evidence. Saved chats and alerts keep next steps visible.
+
+[177–180s | Logout]
+Nexus. Move research forward, together.

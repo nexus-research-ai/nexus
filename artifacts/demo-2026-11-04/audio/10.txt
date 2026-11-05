@@ -1,0 +1,1 @@
+The knowledge graph adds another view of the research landscape. Selecting a node reveals nearby researchers, papers, and topics, helping Aria explore connections across the collection.

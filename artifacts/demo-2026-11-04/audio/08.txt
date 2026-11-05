@@ -1,0 +1,1 @@
+Find Collaborators makes discovery more focused. Searching for datasets brings up projects with relevant resources, including EEG recordings, clinical cohorts, and single cell data. Each card names the researcher and shows what the project offers and needs.

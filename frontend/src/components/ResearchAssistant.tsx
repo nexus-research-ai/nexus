@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { demoConversations } from '@/lib/demo';
 import { ArrowUp, BookOpen, ChevronLeft, Clock3, ExternalLink, Maximize2, MessageSquare, Plus, Search, Square, Trash2, X } from 'lucide-react';
 import { ApiError, api, type ChatCitation, type ChatMessage } from '@/lib/api';
 import { safeOrigin } from '@/lib/editor';
 
 type Message = ChatMessage & { id: string; citations?: ChatCitation[] };
-type Conversation = { id: string; title: string; updatedAt: string; messages: Message[] };
+type Conversation = { demo?: boolean; id: string; title: string; updatedAt: string; messages: Message[] };
 const historyKey = 'nexus.recent-chats.v1';
+const seedKey = 'nexus.demo.chats-seeded.v2';
 const suggestions = [
   { title: 'Develop a research idea', prompt: 'Help me turn a research idea into a clear, testable question.' },
   { title: 'Plan a literature review', prompt: 'Help me make a plan for a literature review. Start by asking about my topic.' },
@@ -18,10 +20,21 @@ const suggestions = [
 function readConversations(): Conversation[] {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(historyKey) || '[]');
-    if (!Array.isArray(raw)) return [];
-    return raw.filter((item): item is Conversation => Boolean(item && typeof item.id === 'string' && typeof item.title === 'string' && typeof item.updatedAt === 'string' && Array.isArray(item.messages) && item.messages.every((message: Message) => message && typeof message.id === 'string' && typeof message.content === 'string' && (message.role === 'user' || message.role === 'assistant'))))
-      .slice(0, 30).map(item => ({ ...item, messages: item.messages.slice(-80) }));
-  } catch { return []; }
+    const valid: Conversation[] = Array.isArray(raw) ? raw.filter((item): item is Conversation => Boolean(item && typeof item.id === 'string' && typeof item.title === 'string' && typeof item.updatedAt === 'string' && Array.isArray(item.messages) && item.messages.every((message: Message) => message && typeof message.id === 'string' && typeof message.content === 'string' && (message.role === 'user' || message.role === 'assistant')))) : [];
+    if (!localStorage.getItem(seedKey)) {
+      const seeds: Conversation[] = demoConversations();
+      for (const seed of seeds) {
+        const index = valid.findIndex(item => item.id === seed.id);
+        if (index < 0) { valid.push(seed); continue; }
+        const existing = valid[index];
+        if (!existing.demo) continue;
+        const seedMessageIds = new Set([`${seed.id}-user`, `${seed.id}-reply`, ...seed.messages.map(message => message.id)]);
+        const extraMessages = existing.messages.filter(message => !seedMessageIds.has(message.id));
+        valid[index] = { ...seed, updatedAt: existing.updatedAt, messages: [...seed.messages, ...extraMessages] };
+      }
+    }
+    return valid.slice(0, 30).map(item => ({ ...item, messages: item.messages.slice(-80) }));
+  } catch { return demoConversations(); }
 }
 
 export default function ResearchAssistant({ onClose, initialPrompt, mode = 'panel', initialConversationId }: { onClose: () => void; initialPrompt?: string; mode?: 'panel' | 'page'; initialConversationId?: string | null }) {
@@ -49,9 +62,15 @@ export default function ResearchAssistant({ onClose, initialPrompt, mode = 'pane
 
   useEffect(() => {
     if (!historyLoaded) return;
-    try { localStorage.setItem(historyKey, JSON.stringify(conversations)); }
+    try {
+      localStorage.setItem(historyKey, JSON.stringify(conversations));
+      if (demoConversations().every(item => item.messages.length >= 6)) localStorage.setItem(seedKey, '1');
+      setStorageError('');
+    }
     catch { setStorageError('Browser storage is unavailable. Chats will only last until you close this panel.'); }
   }, [conversations, historyLoaded]);
+
+  useEffect(() => { setActiveId(initialConversationId || null); }, [initialConversationId]);
 
   useEffect(() => {
     if (mode === 'page') { inputRef.current?.focus(); return () => requestRef.current?.abort(); }
@@ -74,11 +93,20 @@ export default function ResearchAssistant({ onClose, initialPrompt, mode = 'pane
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [activeId, messages.length, pendingId]);
 
-  const newChat = () => { setActiveId(null); setDraft(''); setError(''); setHistoryOpen(false); inputRef.current?.focus(); };
-  const openChat = (id: string) => { setActiveId(id); setDraft(''); setError(''); setHistoryOpen(false); inputRef.current?.focus(); };
+  const selectConversation = (id: string | null) => {
+    setActiveId(id);
+    if (mode === 'page') {
+      const url = new URL(window.location.href);
+      if (id) url.searchParams.set('conversation', id);
+      else url.searchParams.delete('conversation');
+      window.history.replaceState(null, '', url);
+    }
+  };
+  const newChat = () => { selectConversation(null); setDraft(''); setError(''); setHistoryOpen(false); inputRef.current?.focus(); };
+  const openChat = (id: string) => { selectConversation(id); setDraft(''); setError(''); setHistoryOpen(false); inputRef.current?.focus(); };
 
   const send = async (text: string, retry = false) => {
-    if (!text.trim() || pendingId || !historyLoaded) return;
+    if (!text.trim() || requestRef.current || !historyLoaded) return;
     const id = activeId ?? crypto.randomUUID();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -88,10 +116,10 @@ export default function ResearchAssistant({ onClose, initialPrompt, mode = 'pane
     const now = new Date().toISOString();
     setConversations(current => {
       const existing = current.find(item => item.id === id);
-      const updated: Conversation = { id, title: existing?.title ?? text.trim().slice(0, 65), updatedAt: now, messages: nextMessages.slice(-80) };
+      const updated: Conversation = { id, demo: existing?.demo, title: existing?.title ?? text.trim().slice(0, 65), updatedAt: now, messages: nextMessages.slice(-80) };
       return [updated, ...current.filter(item => item.id !== id)].slice(0, 30);
     });
-    setActiveId(id);
+    selectConversation(id);
     setDraft('');
     setError('');
     setPendingId(id);
@@ -105,7 +133,7 @@ export default function ResearchAssistant({ onClose, initialPrompt, mode = 'pane
       if (controller.signal.aborted) return;
       setErrorConversationId(id);
       setError(err instanceof ApiError && [404, 503].includes(err.status) ? 'Chat is currently unavailable. Your message is saved; try again when the service is connected.' : err instanceof ApiError && err.status === 502 ? 'The reply service couldn’t respond. Your message is saved. Please try again.' : err instanceof Error ? err.message : 'The message couldn’t be sent. Please try again.');
-    } finally { if (!controller.signal.aborted) { setPendingId(null); requestRef.current = null; } }
+    } finally { if (requestRef.current === controller) { setPendingId(null); requestRef.current = null; } }
   };
 
   const submit = (event: FormEvent) => { event.preventDefault(); void send(draft); };
@@ -119,16 +147,16 @@ export default function ResearchAssistant({ onClose, initialPrompt, mode = 'pane
         <h2>Recent chats</h2>
         {conversations.length > 0 && <label className="chat-history-search"><Search size={14} /><input aria-label="Search recent chats" placeholder="Search chats" value={historySearch} onChange={event => setHistorySearch(event.target.value)} /></label>}
         <div className="chat-history-items">{!recent.length && <p className="chat-history-empty">{historySearch ? 'No chats match your search.' : 'Your conversations will appear here.'}</p>}
-          {recent.map(item => <div key={item.id} className={`chat-history-item ${activeId === item.id ? 'active' : ''}`}><button onClick={() => openChat(item.id)} aria-pressed={activeId === item.id}><span>{item.title}</span><small>{new Date(item.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</small></button><button aria-label={`Delete chat: ${item.title}`} title="Delete chat" onClick={() => { setConversations(current => current.filter(chat => chat.id !== item.id)); if (activeId === item.id) newChat(); }} disabled={pendingId === item.id}><Trash2 size={14} /></button></div>)}
+          {recent.map(item => <div key={item.id} className={`chat-history-item ${activeId === item.id ? 'active' : ''}`}><button onClick={() => openChat(item.id)} aria-pressed={activeId === item.id}><span>{item.title}</span><small>{item.demo ? 'Demo · ' : ''}{new Date(item.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</small></button><button aria-label={`Delete chat: ${item.title}`} title="Delete chat" onClick={() => { setConversations(current => current.filter(chat => chat.id !== item.id)); if (activeId === item.id) newChat(); }} disabled={pendingId === item.id}><Trash2 size={14} /></button></div>)}
         </div>
         {mode === 'page' && <Link className="chat-workspace-link" href="/">Back to workspace</Link>}
         <p className="chat-history-note">Recent chats are saved in this browser.</p>
       </aside>
       <section className="chat-main">
-        <header className="chat-header"><div><h2 id="research-chat-title">{mode === 'panel' ? 'Nexus AI' : active?.title || 'New chat'}</h2><span>{mode === 'panel' ? active?.title || 'Your research assistant' : 'Nexus AI · Research assistant'}</span></div><div><button className="icon-button chat-show-history" aria-label="Show recent chats" title="Recent chats" onClick={() => setHistoryOpen(true)}><Clock3 size={18} /></button><button className="icon-button" aria-label="Start a new chat" title="New chat" onClick={newChat}><Plus size={18} /></button>{mode === 'panel' && <Link className="icon-button" aria-label="Open chat page" title="Open chat page" href={activeId ? `/chat?conversation=${encodeURIComponent(activeId)}` : '/chat'}><Maximize2 size={17} /></Link>}<button className="icon-button" aria-label={mode === 'panel' ? 'Close research assistant' : 'Back to workspace'} title={mode === 'panel' ? 'Close' : 'Back to workspace'} onClick={onClose}>{mode === 'panel' ? <X size={18} /> : <ChevronLeft size={18} />}</button></div></header>
+        <header className="chat-header"><div><h2 id="research-chat-title">{mode === 'panel' ? 'Nexus AI' : active?.title || 'New chat'}</h2><span>{active?.demo ? 'Demo conversation' : mode === 'panel' ? active?.title || 'Your research assistant' : 'Nexus AI · Research assistant'}</span></div><div><button className="icon-button chat-show-history" aria-label="Show recent chats" title="Recent chats" onClick={() => setHistoryOpen(true)}><Clock3 size={18} /></button><button className="icon-button" aria-label="Start a new chat" title="New chat" onClick={newChat}><Plus size={18} /></button>{mode === 'panel' && <Link className="icon-button" aria-label="Open chat page" title="Open chat page" href={activeId ? `/chat?conversation=${encodeURIComponent(activeId)}` : '/chat'}><Maximize2 size={17} /></Link>}<button className="icon-button" aria-label={mode === 'panel' ? 'Close research assistant' : 'Back to workspace'} title={mode === 'panel' ? 'Close' : 'Back to workspace'} onClick={onClose}>{mode === 'panel' ? <X size={18} /> : <ChevronLeft size={18} />}</button></div></header>
         <div className="chat-conversation" ref={scrollRef} role="log" aria-label="Conversation" aria-live="polite">
           {!messages.length && <div className="chat-welcome"><div className="chat-welcome-icon"><BookOpen size={26} /></div><h3>What are you working on?</h3><p>Start with a question or choose a starting point below.</p><div className="chat-suggestions">{suggestions.map(item => <button key={item.title} onClick={() => { setDraft(item.prompt); inputRef.current?.focus(); }}><span>{item.title}</span><Plus size={15} /></button>)}</div></div>}
-          {messages.map(message => <article key={message.id} className={`chat-message ${message.role}`}><span className="chat-message-role">{message.role === 'user' ? 'You' : 'Nexus'}</span><div className="chat-message-content">{message.content}</div>{Array.isArray(message.citations) && message.citations.length > 0 && <div className="chat-sources"><span>Sources</span>{message.citations.map((citation, index) => safeOrigin(citation.origin) && <a key={`${citation.source_id}-${index}`} href={safeOrigin(citation.origin)} target="_blank" rel="noopener noreferrer">{citation.title}<ExternalLink size={12} /></a>)}</div>}</article>)}
+          {messages.map(message => <article key={message.id} className={`chat-message ${message.role}`}><span className="chat-message-role">{message.role === 'user' ? 'You' : 'Nexus'}</span><div className="chat-message-content">{message.content}</div>{Array.isArray(message.citations) && message.citations.length > 0 && <div className="chat-sources"><span>Evidence from stored papers</span>{message.citations.map((citation, index) => citation && typeof citation.title === 'string' && safeOrigin(citation.origin) && <div className="chat-source-card" key={`${citation.source_id}-${index}`}><a href={safeOrigin(citation.origin)} target="_blank" rel="noopener noreferrer">{citation.title}<ExternalLink size={12} /></a>{typeof citation.quote === 'string' && citation.quote.trim() && <><span className="chat-source-label">From stored paper record</span><blockquote className="chat-source-quote">{citation.quote}</blockquote></>}</div>)}</div>}</article>)}
           {pendingId && pendingId === activeId && <div className="chat-pending" role="status"><span className="spinner" />Preparing a reply…</div>}
         </div>
         <div className="chat-composer-area">
