@@ -9,3 +9,18 @@ node_modules/
 .next/
 .venv/
 *.tsbuildinfo
+
+# Mac OS
+.DS_Store
+
+# Data files (keep gitkeep, prompts, taxonomies, and demo fixtures)
+data/*
+!data/.gitkeep
+!data/prompts/
+!data/taxonomies/
+!data/demo_profiles.json
+!data/demo_parsed_papers.json
+
+# Tool caches
+.playwright-mcp/
+.cache/

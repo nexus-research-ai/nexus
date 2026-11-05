@@ -233,7 +233,7 @@ export const api = {
     if (hops !== undefined) params.set('hops', String(hops));
     return request<GraphData>(`/graph?${params.toString()}`);
   },
-  chat: (body: ChatInput) => post<ChatResult>('/chat', body),
+  chat: (body: ChatInput, signal?: AbortSignal) => request<ChatResult>('/chat', { method: 'POST', body: JSON.stringify(body), signal }),
   opportunityCatalog: () => request<{ items: OpportunityCatalogItem[] }>('/opportunities/catalog'),
   importOpportunityCatalog: (team_id: string) => post<{ imported: number; items: Opportunity[] }>('/opportunities/catalog/import', { team_id }),
   sourcePdfUrl: (sourceId: string) => `/api/v2/sources/${sourceId}/pdf`,

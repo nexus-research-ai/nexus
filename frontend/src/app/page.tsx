@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import GraphViewer from "@/components/GraphViewer"
+import FundingBrowser from "@/components/FundingBrowser"
+import ResearchAssistant from "@/components/ResearchAssistant"
 
 export type View = "home" | "campus" | "literature" | "vault" | "pod" | "proof" | "graph"
 export const mainNavKeys: View[] = ["home", "campus", "literature", "vault", "graph"]
@@ -241,18 +243,52 @@ export function NexusLogo() {
   )
 }
 
+const avatarMap: Record<string, string> = {
+  AM: "/avatars/aria_malik.jpg",
+  JL: "/avatars/jon_lee.jpg",
+  MR: "/avatars/maya_rodriguez.jpg",
+  MK: "/avatars/maya_rodriguez.jpg",
+  SR: "/avatars/sarah_rao.jpg",
+  JH: "/avatars/jordan_hayes.jpg",
+  MV: "/avatars/marcus_vance.jpg",
+  EC: "/avatars/emily_chen.jpg",
+  DM: "/avatars/david_miller.jpg",
+  RA: "/avatars/rachel_adams.jpg",
+  AR: "/avatars/alex_rivera.jpg",
+  TS: "/avatars/tyler_scott.jpg",
+  EV: "/avatars/elena_vasquez.jpg",
+}
+
 export function Avatar({
   initials,
   color = "teal",
   active = false,
+  imageUrl,
 }: {
   initials: string
   color?: string
   active?: boolean
+  imageUrl?: string
 }) {
+  const resolvedUrl = imageUrl || avatarMap[initials]
+
   return (
-    <span className={`avatar avatar-${color} ${active ? "is-active" : ""}`}>
-      {initials}
+    <span
+      className={`avatar avatar-${color} ${active ? "is-active" : ""}`}
+      style={resolvedUrl ? { padding: 0, overflow: "hidden", background: "#e2e8f0" } : undefined}
+    >
+      {resolvedUrl ? (
+        <img
+          src={resolvedUrl}
+          alt={initials}
+          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%", display: "block" }}
+          onError={(e) => {
+            (e.target as HTMLElement).style.display = "none"
+          }}
+        />
+      ) : (
+        initials
+      )}
     </span>
   )
 }
@@ -359,7 +395,7 @@ export const initialProjects = [
     dept: "EECS · Helen Wills Neuroscience",
     title: "Cross-subject latent alignment for non-invasive EEG decoding",
     body: "We train subject-specific adapters into a shared geometry. Looking for teams with 64+ channel longitudinal datasets to benchmark calibration speed.",
-    offer: ["Optimal transport", "Adapter weights", "PyTorch codebase"],
+    offer: ["Optimal transport", "Adapter weights", "PyTorch codebase", "DP auditing"],
     need: ["Longitudinal EEG", "Clinical sleep data", "Compute grant"],
   },
   {
@@ -385,27 +421,67 @@ export const initialProjects = [
   {
     stage: "PROTOTYPE",
     color: "orange",
-    degree: "Lab",
+    degree: "PhD",
     dept: "Bioengineering & Neurotechnology",
     title: "Synchronized multimodal telemetry for freely moving subjects",
     body: "Combining high-density optical tracking with sub-millivolt surface biopotentials. Need validation against commercial wireless acquisition rigs.",
     offer: ["Optical hardware", "Firmware stack", "Telemetry sync"],
     need: ["Biopotential rig", "Benchmarking lab", "Validation trials"],
   },
+  {
+    stage: "PROTOTYPE",
+    color: "gold",
+    degree: "PhD",
+    dept: "Helen Wills Neuroscience Institute",
+    title: "High-density mobile neurotelemetry with 128-channel dry electrode montages",
+    body: "Operating a 128-channel mobile EEG recording rig for auditory event-related potential decoding in real-world environments.",
+    offer: ["128-channel mobile EEG", "Event-related potential pipelines", "Clinical cohorts"],
+    need: ["Federated learning", "Latent alignment", "Privacy audit tools"],
+  },
+  {
+    stage: "PRE-PRINT",
+    color: "violet",
+    degree: "PhD",
+    dept: "EECS · BAIR",
+    title: "Pixel-to-Proof: Grounding scientific claims in figures via Meta SAM 3.1",
+    body: "Isolating sub-panels, error bars, and axis labels cited in academic text with zero-shot segmentation to verify mathematical and empirical claims.",
+    offer: ["SAM 3.1 fine-tuning", "Scientific diagram parsing", "Multimodal grounding"],
+    need: ["Microscopy datasets", "Neural spectrograms", "Grant figures"],
+  },
+  {
+    stage: "ACTIVE",
+    color: "blue",
+    degree: "Staff Scientist",
+    dept: "Computational Biology & Genomics",
+    title: "Scalable manifold alignment for multi-omics single-cell cohorts",
+    body: "Aligning single-cell RNA-seq and ATAC-seq across decentralized clinical labs while preserving cell trajectory topology.",
+    offer: ["Single-cell pipelines", "Genomic manifold alignment", "Nextflow workflows"],
+    need: ["Differential privacy bounds", "GPU clustering", "Multi-institution consortium"],
+  },
+  {
+    stage: "PROTOTYPE",
+    color: "orange",
+    degree: "Postdoc",
+    dept: "EECS & Quantum Systems",
+    title: "Cryogenic CMOS readout circuits for ultra-low noise neural recording",
+    body: "Fabricating 0.5V sub-threshold analog front-ends delivering 1.8 uVrms noise across 10 kHz for multi-electrode arrays.",
+    offer: ["ASIC tape-outs", "FPGA acceleration", "Cryogenic test setups"],
+    need: ["Spike-based EEG data", "Low-power algorithm partners", "Clinical verification"],
+  },
 ]
 
 export const initialPapers = [
   {
     title: "Federated Foundation Models for Privacy-Preserving Neural Decoding",
-    authors: "Zhang et al. · Nature Machine Intelligence",
+    authors: "Zhang, Chen, Lee, Rao · Nature Machine Intelligence",
     score: 96,
     verdict: "Supports",
-    person: "MK",
+    person: "MR",
     color: "blue",
   },
   {
     title: "Cross-Subject EEG Alignment via Optimal Transport",
-    authors: "Li, Verma et al. · NeurIPS 2024",
+    authors: "Li, Verma, Malik, Hayes · NeurIPS 2024",
     score: 91,
     verdict: "Methodology",
     person: "JL",
@@ -413,48 +489,245 @@ export const initialPapers = [
   },
   {
     title: "The Privacy Cost of Brain–Computer Interfaces",
-    authors: "Rao et al. · ACM FAccT 2023",
+    authors: "Rao, Adams, Shokri · ACM FAccT 2023",
     score: 88,
     verdict: "Contradicts",
     person: "AM",
     color: "gold",
   },
   {
-    title: "Differentially Private Parameter Aggregation in Healthcare Fleets",
-    authors: "Kairouz, McMahan et al. · Nature Digital Medicine 2024",
-    score: 87,
+    title: "HOSL: Hybrid-Order Split Learning for Memory-Constrained Edge Training",
+    authors: "Lnu, Li, Liang, Lee, Yang · IEEE TMC 2024",
+    score: 93,
     verdict: "Supports",
-    person: "MK",
+    person: "JL",
+    color: "blue",
+  },
+  {
+    title: "Low-Overhead Soft Conductive Elastomers for Continuous Micro-Strain Telemetry",
+    authors: "Rodriguez, Adams, Thorne · Advanced Functional Materials 2024",
+    score: 90,
+    verdict: "Supports",
+    person: "MR",
+    color: "violet",
+  },
+  {
+    title: "Differentially Private Parameter Aggregation in Healthcare Fleets",
+    authors: "Kairouz, McMahan, Rao, Rivera · Nature Digital Medicine 2024",
+    score: 95,
+    verdict: "Supports",
+    person: "AR",
     color: "blue",
   },
   {
     title: "Riemannian Geometries for Manifold Alignment of Biopotentials",
-    authors: "Barachant, Bonnet et al. · IEEE TBME 2023",
-    score: 85,
+    authors: "Barachant, Bonnet, Malik, Vasquez · IEEE TBME 2023",
+    score: 89,
     verdict: "Methodology",
     person: "JL",
     color: "violet",
   },
   {
     title: "Membership Inference Vulnerabilities in Federated Latent Embeddings",
-    authors: "Shokri, Carlini et al. · IEEE S&P 2024",
+    authors: "Shokri, Carlini, Rivera · IEEE S&P 2024",
     score: 84,
     verdict: "Contradicts",
+    person: "AM",
+    color: "gold",
+  },
+  {
+    title: "Synchronized Multimodal Telemetry for Freely Moving Subjects",
+    authors: "Vance, Scott, Vasquez · Nature Neuroscience Methods 2024",
+    score: 92,
+    verdict: "Supports",
+    person: "MV",
+    color: "blue",
+  },
+  {
+    title: "Pixel-to-Proof: Grounding Scientific Claims in Multimodal Figures via SAM 3.1",
+    authors: "Chen, Malik, Thorne · CVPR 2024",
+    score: 94,
+    verdict: "Supports",
+    person: "EC",
+    color: "blue",
+  },
+  {
+    title: "Scalable Manifold Alignment for Multi-Omics Single-Cell Cohorts",
+    authors: "Miller, Chen, Rao · Genome Biology 2024",
+    score: 91,
+    verdict: "Supports",
+    person: "DM",
+    color: "teal",
+  },
+  {
+    title: "Cryogenic CMOS Readout Circuits for Ultra-Low Noise Neural Recording",
+    authors: "Scott, Vance, Vasquez · IEEE JSSC 2024",
+    score: 88,
+    verdict: "Methodology",
+    person: "TS",
+    color: "orange",
+  },
+  {
+    title: "Entropic Regularization Bounds for Fast Distributed Sinkhorn Iterations",
+    authors: "Verma, Li, Malik · SIAM Journal on Optimization 2023",
+    score: 87,
+    verdict: "Methodology",
+    person: "AM",
+    color: "violet",
+  },
+  {
+    title: "Drift-Resistant Strain Gauges via Carbon Nanotube Percolation Networks",
+    authors: "Adams, Rodriguez, Thorne · ACS Nano 2024",
+    score: 90,
+    verdict: "Supports",
+    person: "RA",
+    color: "teal",
+  },
+  {
+    title: "Verifiable Machine Learning for Biomedical Signal Decoding",
+    authors: "Rivera, Rao, Lee · JMLR 2024",
+    score: 93,
+    verdict: "Supports",
+    person: "JL",
+    color: "blue",
+  },
+  {
+    title: "Cortical Source Localization via Sparse Bayesian Learning over Non-Invasive Montages",
+    authors: "Hayes, Vasquez, Verma · NeuroImage 2024",
+    score: 89,
+    verdict: "Methodology",
+    person: "JH",
+    color: "gold",
+  },
+  {
+    title: "Adaptive Zeroth-Order Perturbation for Edge Device Parameter Offloading",
+    authors: "Li, Lnu, Lee · ICLR 2024",
+    score: 92,
+    verdict: "Supports",
+    person: "JL",
+    color: "blue",
+  },
+  {
+    title: "Automated Review Rubric Simulation via Meta Muse Reasoning",
+    authors: "Malik, Rao, Chen · Artificial Intelligence Review 2024",
+    score: 96,
+    verdict: "Supports",
+    person: "AM",
+    color: "violet",
+  },
+  {
+    title: "Bio-Inspired Spatial Attention for Multi-Channel Electrophysiology",
+    authors: "Chen, Vance, Malik · IEEE TNSRE 2023",
+    score: 88,
+    verdict: "Methodology",
+    person: "MV",
+    color: "blue",
+  },
+  {
+    title: "Provably Secure Parameter Exchange in Federated Research Consortia",
+    authors: "Rivera, Scott, Rao · ACM TOPS 2024",
+    score: 94,
+    verdict: "Supports",
+    person: "AR",
+    color: "teal",
+  },
+  {
+    title: "Real-Time Adaptive Filtering of Motion Artifacts in Unmanned Aerial Biotelemetry",
+    authors: "Adams, Rodriguez, Hayes · IEEE RA-L 2024",
+    score: 90,
+    verdict: "Supports",
+    person: "MR",
+    color: "teal",
+  },
+  {
+    title: "Zero-Leakage Gradient Obfuscation via Cryptographic Shuffling",
+    authors: "Lee, Scott, Rao · USENIX Security 2024",
+    score: 93,
+    verdict: "Supports",
+    person: "JL",
+    color: "blue",
+  },
+  {
+    title: "Topological Data Analysis for EEG Latent Trajectory Disambiguation",
+    authors: "Malik, Verma, Hayes · PLOS Computational Biology 2023",
+    score: 87,
+    verdict: "Methodology",
+    person: "AM",
+    color: "violet",
+  },
+  {
+    title: "Decentralized Clinical Trial Cohort Verification under Multi-Site IRB Mandates",
+    authors: "Rao, Miller, Vasquez · The Lancet Digital Health 2024",
+    score: 97,
+    verdict: "Supports",
+    person: "SR",
+    color: "teal",
+  },
+  {
+    title: "Micro-Watt Neuromorphic Event-Driven Decoders for Sub-Cranial Implants",
+    authors: "Scott, Vance, Thorne · IEEE LSSC 2024",
+    score: 91,
+    verdict: "Methodology",
+    person: "TS",
+    color: "orange",
+  },
+  {
+    title: "Graph Attention Networks for Cross-Department Collaborative Matchmaking",
+    authors: "Malik, Chen, Lee · ACM TKDD 2024",
+    score: 94,
+    verdict: "Supports",
+    person: "AM",
+    color: "blue",
+  },
+  {
+    title: "Fast Spectral Clamping for Privacy-Preserving Eigenvector Alignment",
+    authors: "Verma, Rivera, Rao · Linear Algebra and its Applications 2023",
+    score: 86,
+    verdict: "Methodology",
+    person: "AR",
+    color: "violet",
+  },
+  {
+    title: "Autonomous Airframe Inspection with Continuous Skin-Strain Monitoring",
+    authors: "Rodriguez, Adams, Thorne · IEEE TIE 2024",
+    score: 92,
+    verdict: "Supports",
+    person: "MR",
+    color: "violet",
+  },
+  {
+    title: "Scalable Vector Search over Pre-Publication Campus Literature",
+    authors: "Lee, Chen, Malik · PVLDB 2024",
+    score: 95,
+    verdict: "Supports",
+    person: "JL",
+    color: "blue",
+  },
+  {
+    title: "Neural Commons: A Living Knowledge Graph Architecture for University Discovery",
+    authors: "Malik, Lee, Rodriguez, Rao, Vasquez · CACM 2024",
+    score: 98,
+    verdict: "Supports",
     person: "AM",
     color: "gold",
   },
 ]
 
 export const searchCatalog = [
-  { type: "person", title: "Jordan Lee", subtitle: "PhD · Neuroscience · Helen Wills Institute", meta: "0.4 miles away", view: "campus" },
-  { type: "person", title: "Maya Rodriguez", subtitle: "PhD Candidate · Robotics & Autonomous Systems", meta: "Active now", view: "campus" },
-  { type: "person", title: "Sam Chen", subtitle: "Computational Biology · Python & Genomics", meta: "Suggested peer", view: "campus" },
-  { type: "project", title: "Soft aerial sensors for forest canopy health", subtitle: "Maya Rodriguez · Prototype stage", meta: "Robotics", view: "home" },
-  { type: "project", title: "Cross-subject latent alignment for non-invasive EEG", subtitle: "EECS · Helen Wills Neuroscience", meta: "94% Match", view: "campus" },
+  { type: "person", title: "Jordan Hayes", subtitle: "PhD Candidate · Cognitive Neuroscience · Helen Wills Institute", meta: "0.4 miles away · Active now", view: "campus" },
+  { type: "person", title: "Maya Rodriguez", subtitle: "Postdoc · Robotics & Autonomous Systems", meta: "Pod Member · Active now", view: "pod" },
+  { type: "person", title: "Jon Lee", subtitle: "PhD Candidate · Systems & Privacy · EECS", meta: "Pod Member · In Proposal Studio", view: "proof" },
+  { type: "person", title: "Prof. Sarah Rao", subtitle: "Associate Professor · Computational Precision Health", meta: "Faculty Advisor", view: "campus" },
+  { type: "person", title: "Emily Chen", subtitle: "PhD Student · Computer Vision & BAIR", meta: "SAM 3.1 Visual Grounding", view: "campus" },
+  { type: "person", title: "Marcus Vance", subtitle: "PhD Researcher · Bioengineering & Neurotechnology", meta: "Synchronized Biopotentials", view: "campus" },
+  { type: "person", title: "David Miller", subtitle: "Staff Scientist · Computational Biology & Genomics", meta: "Single-Cell Manifold Lead", view: "campus" },
+  { type: "project", title: "Cross-subject latent alignment for non-invasive EEG", subtitle: "EECS · Helen Wills Neuroscience", meta: "96% Fit", view: "campus" },
+  { type: "project", title: "Low-overhead soft sensors for continuous micro-strain monitoring", subtitle: "Maya Rodriguez · Prototype stage", meta: "Robotics", view: "campus" },
+  { type: "project", title: "Pixel-to-Proof: Grounding scientific claims in figures via SAM 3.1", subtitle: "Emily Chen · BAIR", meta: "Multimodal AI", view: "campus" },
   { type: "paper", title: "Federated Foundation Models for Neural Decoding", subtitle: "Nature Machine Intelligence · Zhang et al.", meta: "96% Verified", view: "proof" },
-  { type: "paper", title: "Cross-Subject EEG Alignment via Optimal Transport", subtitle: "NeurIPS 2024 · Li, Verma et al.", meta: "91% Method", view: "proof" },
-  { type: "skill", title: "Federated Representation Learning", subtitle: "Privacy-preserving multi-site optimization", meta: "12 Projects", view: "graph" },
-  { type: "skill", title: "Mobile EEG Lab Access (128-channel)", subtitle: "High-density mobile neurotelemetry", meta: "Jordan Lee", view: "campus" },
+  { type: "paper", title: "HOSL: Hybrid-Order Split Learning for Edge Training", subtitle: "IEEE TMC · Lnu, Lee et al.", meta: "93% Verified", view: "pod" },
+  { type: "skill", title: "Federated Representation Learning", subtitle: "Privacy-preserving multi-site optimization", meta: "14 Projects", view: "campus" },
+  { type: "skill", title: "Mobile EEG Lab Access (128-channel)", subtitle: "High-density mobile neurotelemetry", meta: "Jordan Hayes", view: "campus" },
 ]
 
 // --- MODAL DIALOGS ---
@@ -2204,13 +2477,7 @@ export function LiteratureView({
 
 // --- KNOWLEDGE GRAPH VIEW ---
 
-export function GraphView({
-  setView,
-  showToast,
-}: {
-  setView: (view: View) => void
-  showToast: (msg: string) => void
-}) {
+export function GraphView({ setView }: { setView: (view: View) => void }) {
   return (
     <div className="view">
       <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -2230,27 +2497,7 @@ export function GraphView({
         </button>
       </div>
 
-      <div
-        className="graph-workspace"
-        style={{
-          height: "calc(100vh - 220px)",
-          minHeight: 680,
-          border: "1px solid var(--line)",
-          borderRadius: 14,
-          overflow: "hidden",
-          background: "var(--card)",
-          position: "relative",
-        }}
-      >
-        <GraphViewer
-          onSearchTopic={(topic) => {
-            showToast(`Filtered knowledge graph by: ${topic}`)
-          }}
-          onAttachSource={(sourceId) => {
-            showToast(`Selected source ${sourceId}`)
-          }}
-        />
-      </div>
+      <div className="graph-workspace"><GraphViewer /></div>
     </div>
   )
 }
@@ -2726,7 +2973,7 @@ export function HomeView({
                 <button
                   className="icon-button"
                   title="Save match"
-                  onClick={() => showToast("Saved Jordan Lee's match to your shortlist")}
+                  onClick={() => showToast("Saved Jordan Hayes's match to your shortlist")}
                 >
                   <Icon name="pin" size={15} />
                 </button>
@@ -2734,7 +2981,7 @@ export function HomeView({
                   className="icon-button"
                   title="Share profile"
                   onClick={() => {
-                    navigator.clipboard?.writeText("https://nexus.research/profile/jordan-lee").catch(() => {})
+                    navigator.clipboard?.writeText("https://nexus.research/profile/jordan-hayes").catch(() => {})
                     showToast("Profile link copied")
                   }}
                 >
@@ -2751,19 +2998,19 @@ export function HomeView({
             </header>
             <div className="match-post-body">
               <div className="match-person">
-                <Avatar initials="JL" color="blue" active />
+                <Avatar initials="JH" color="gold" active />
                 <div>
-                  <h2>Jordan Lee</h2>
-                  <p>PhD Researcher in Neuroscience</p>
+                  <h2>Jordan Hayes</h2>
+                  <p>PhD Researcher in Cognitive Neuroscience</p>
                   <span>Helen Wills Neuroscience Institute · 0.4 miles</span>
                 </div>
                 <div className="simple-match-score">
-                  <b>94%</b>
+                  <b>96%</b>
                   <span>match</span>
                 </div>
               </div>
               <p className="feed-lead">
-                Jordan runs a mobile EEG lab and is looking for a collaborator with federated learning experience. You’re looking for longitudinal EEG access.
+                Jordan operates a 128-channel mobile EEG lab and is looking for a collaborator with federated representation learning. You’re looking for longitudinal EEG cohorts.
               </p>
               <div className="match-reasons">
                 <div>
@@ -2785,14 +3032,14 @@ export function HomeView({
                     openOverlay("reveal")
                   } else {
                     setConnected(true)
-                    showToast("Private interest sent to Jordan Lee! Awaiting mutual reveal.")
+                    showToast("Private interest sent to Jordan Hayes! Awaiting mutual reveal.")
                   }
                 }}
               >
                 <Icon name={connected ? "check" : "users"} />
                 {connected ? "Review connection" : "Connect privately"}
               </button>
-              <button onClick={() => onTelemetry("Question for Jordan Lee regarding 128-channel mobile EEG lab calibration protocols:")}>
+              <button onClick={() => onTelemetry("Question for Jordan Hayes regarding 128-channel mobile EEG lab calibration protocols:")}>
                 <Icon name="message" /> Ask a question
               </button>
               <small>Profiles reveal only after both people accept</small>
@@ -2990,14 +3237,14 @@ export function HomeView({
           </section>
 
           <section className="funding-card clean-card">
-            <span>FUNDING MATCH</span>
-            <h3>NIH R21 Exploratory Research</h3>
-            <p>Strong fit for your neural decoding project.</p>
+            <span>Research funding</span>
+            <h3>Find a grant for your research</h3>
+            <p>Compare funding by research area, award size, and eligibility.</p>
             <div>
-              <b>Deadline</b>
-              <span>Dec 12 · 64 days</span>
+              <b>Example catalog</b>
+              <span>NSF, NIH &amp; DARPA</span>
             </div>
-            <button onClick={() => openOverlay("funding")}>View opportunity</button>
+            <button onClick={() => openOverlay("funding")}>Browse opportunities</button>
           </section>
 
           <footer className="home-footer">
@@ -3420,20 +3667,16 @@ export function ProofView({
                 </div>
 
                 {claim === 0 ? (
-                  <div className="figure">
-                    <div className="chart">
-                      <span className="axis-y">Accuracy (%)</span>
-                      <div className="bars">
-                        <i style={{ height: "68%" }} />
-                        <i style={{ height: "81%" }} />
-                        <i style={{ height: "76%" }} />
-                        <i style={{ height: "92%" }} />
-                        <i style={{ height: "89%" }} />
-                      </div>
-                      <span className="axis-x">Subject cohorts →</span>
-                    </div>
-                    <div className="sam-polygon">
-                      <span>SAM 3.1 · FIGURE 4B</span>
+                  <div className="figure" style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: "#fff", border: "1px solid #e2e8f0" }}>
+                    <img
+                      src="/figures/figure_4b_neural_alignment.png"
+                      alt="Figure 4b: Cross-Site Latent Calibration and Parameter Retention"
+                      style={{ width: "100%", height: "auto", display: "block" }}
+                    />
+                    <div className="sam-polygon" style={{ position: "absolute", top: 12, right: 12 }}>
+                      <span style={{ background: "rgba(79, 70, 229, 0.95)", color: "#fff", padding: "4px 9px", borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: "0.03em", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
+                        ✦ SAM 3.1 GROUNDED [FIGURE 4B · 94.2% FIT]
+                      </span>
                     </div>
                   </div>
                 ) : (
@@ -3593,221 +3836,6 @@ export function ProofView({
   )
 }
 
-// --- TELEMETRY DRAWER (ASK NEXUS) ---
-
-export function TelemetryDrawer({
-  onClose,
-  openOverlay,
-  initialPrompt,
-  onNavigate,
-}: {
-  onClose: () => void
-  openOverlay: (overlay: Overlay) => void
-  initialPrompt?: string
-  onNavigate: (v: View) => void
-}) {
-  const [question, setQuestion] = useState(typeof initialPrompt === "string" ? initialPrompt : "")
-  const [answer, setAnswer] = useState(typeof initialPrompt === "string" && Boolean(initialPrompt))
-  const [telemetryData, setTelemetryData] = useState({
-    latency: 24,
-    tokens: "147.5k",
-    reasoningRatio: "76.4%",
-    cost: "$0.0474",
-  })
-
-  useEffect(() => {
-    fetch('/api/v2/campus/meta-ai/telemetry')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d && d.build_telemetry) {
-          const totalTok = d.build_telemetry.total_tokens_processed || 147536
-          setTelemetryData({
-            latency: d.connection?.latency_ms || 24,
-            tokens: (totalTok / 1000).toFixed(1) + "k",
-            reasoningRatio: d.build_telemetry.reasoning_tokens_ratio || "76.4%",
-            cost: "$" + (d.build_telemetry.estimated_cost_usd || 0.0474).toFixed(4),
-          })
-        }
-      })
-      .catch(() => {})
-  }, [])
-
-  const prompts = [
-    "What evidence is missing for Aim 2?",
-    "Summarize pod decisions this week",
-    "Check Figure 4b for sample size discrepancies",
-  ]
-
-  const ask = () => {
-    if (question.trim()) setAnswer(true)
-  }
-
-  return (
-    <div className="drawer-backdrop" onClick={onClose}>
-      <aside className="telemetry-drawer" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <div>
-            <span className="section-kicker">ASK NEXUS</span>
-            <h2>Ask your research workspace</h2>
-          </div>
-          <button className="icon-button" onClick={onClose} title="Close drawer">
-            <Icon name="close" />
-          </button>
-        </header>
-
-        <div className="assistant-composer">
-          <div>
-            <Icon name="spark" />
-            <textarea
-              aria-label="Ask Nexus"
-              placeholder="Ask across your papers, notes, and proposal…"
-              value={question}
-              onChange={(e) => {
-                setQuestion(e.target.value)
-                setAnswer(false)
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  ask()
-                }
-              }}
-            />
-          </div>
-          <button onClick={ask} disabled={!question.trim()}>
-            Ask Nexus <Icon name="arrow" />
-          </button>
-        </div>
-
-        {answer && (
-          <div className="assistant-answer">
-            <div>
-              <Icon name="spark" />
-              <strong>Nexus Synthesis</strong>
-              <Tag tone="verification">3 verified sources</Tag>
-            </div>
-            <p>
-              Aim 2 calibration reduction (61%) is strongly supported across 5 held-out cohorts in Zhang et al. (2024),
-              provided parameter clipping bounds are enforced at communication round boundaries.
-            </p>
-            <button
-              onClick={() => {
-                onClose()
-                onNavigate("pod")
-              }}
-            >
-              Open supporting papers on Evidence Board <Icon name="arrow" />
-            </button>
-          </div>
-        )}
-
-        <div className="prompt-chips">
-          {prompts.map((prompt) => (
-            <button
-              key={prompt}
-              onClick={() => {
-                setQuestion(prompt)
-                setAnswer(true)
-              }}
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-
-        <div className="drawer-section-title">
-          <span>AI activity & Telemetry</span>
-          <small>muse-wonder-1.0 & sam-3.1 online</small>
-        </div>
-
-        <div className="engine-card active">
-          <div>
-            <span className="engine-icon">
-              <Icon name="brain" />
-            </span>
-            <div>
-              <b>muse-wonder-1.0</b>
-              <small>Frontier reasoning · 5,813 reasoning tokens</small>
-            </div>
-            <i />
-          </div>
-          <dl>
-            <div>
-              <dt>Latency p50</dt>
-              <dd>{telemetryData.latency} ms</dd>
-            </div>
-            <div>
-              <dt>Tokens today</dt>
-              <dd>{telemetryData.tokens}</dd>
-            </div>
-            <div>
-              <dt>Est. Cost</dt>
-              <dd>{telemetryData.cost}</dd>
-            </div>
-          </dl>
-          <div className="sparkline">
-            <i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
-          </div>
-        </div>
-
-        <div className="engine-card">
-          <div>
-            <span className="engine-icon violet">
-              <Icon name="eye" />
-            </span>
-            <div>
-              <b>sam-3.1</b>
-              <small>Multimodal vision · Figure extraction</small>
-            </div>
-            <i />
-          </div>
-          <dl>
-            <div>
-              <dt>Polygon latency</dt>
-              <dd>312 ms</dd>
-            </div>
-            <div>
-              <dt>Figures parsed</dt>
-              <dd>8,412</dd>
-            </div>
-            <div>
-              <dt>Confidence</dt>
-              <dd>98.4%</dd>
-            </div>
-          </dl>
-        </div>
-
-        <button
-          className="reasoning-trace"
-          onClick={() => {
-            onClose()
-            openOverlay("reasoning")
-          }}
-        >
-          <div>
-            <span>REASONING INSPECTOR</span>
-            <Tag tone="verification">LIVE</Tag>
-          </div>
-          <p>
-            <code>trace_8f21</code> evaluated claim entailment across caption, figure legend, and plotted values.
-          </p>
-          <div className="token-line">
-            <span>context retrieval</span>
-            <i style={{ width: "92%" }} />
-          </div>
-          <div className="token-line">
-            <span>deep reasoning</span>
-            <i style={{ width: "76%" }} />
-          </div>
-          <span className="trace-action">
-            Inspect step-by-step chain of thought <Icon name="arrow" size={14} />
-          </span>
-        </button>
-      </aside>
-    </div>
-  )
-}
-
 // --- WORKFLOW OVERLAYS (ALL 9 WORKFLOWS) ---
 
 export function ProductOverlay({
@@ -3821,14 +3849,29 @@ export function ProductOverlay({
   showToast: (msg: string) => void
   onNavigate: (v: View) => void
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (overlay !== "funding") return
+    const previousFocus = document.activeElement as HTMLElement | null
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    dialogRef.current?.querySelector<HTMLInputElement>('input[type="search"]')?.focus()
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); onClose(); return }
+      if (event.key !== "Tab") return
+      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, a[href]') ?? []).filter(element => element.getClientRects().length > 0)
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus() }
+      if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus() }
+    }
+    document.addEventListener("keydown", handleKey)
+    return () => { document.removeEventListener("keydown", handleKey); document.body.style.overflow = previousOverflow; previousFocus?.focus() }
+  }, [overlay, onClose])
+
   // Reveal state
   const [selectedPerson, setSelectedPerson] = useState("Jordan Lee")
   const [revealAccepted, setRevealAccepted] = useState(false)
-
-  // Funding state
-  const [activeGrantIdx, setActiveGrantIdx] = useState(0)
-  const [agencyFilter, setAgencyFilter] = useState("All agencies")
-  const [fundingDaysFilter, setFundingDaysFilter] = useState(false)
 
   // Project creator state
   const [ingestUrl, setIngestUrl] = useState("https://arxiv.org/abs/2403.11284")
@@ -3845,33 +3888,6 @@ export function ProductOverlay({
   const [includeFigures, setIncludeFigures] = useState(true)
   const [includeAudit, setIncludeAudit] = useState(true)
   const [includeBibtex, setIncludeBibtex] = useState(true)
-
-  const grants = [
-    {
-      title: "Smart and Connected Health (SCH)",
-      agency: "NSF",
-      amount: "$1,200,000",
-      deadline: "Nov 14",
-      fit: 96,
-      desc: "Supports multi-disciplinary teams addressing health challenges through computational innovations.",
-    },
-    {
-      title: "Exploratory/Developmental Research Grant (R21)",
-      agency: "NIH",
-      amount: "$275,000",
-      deadline: "Dec 12",
-      fit: 91,
-      desc: "High-risk, high-reward exploratory research in early stages of model development.",
-    },
-    {
-      title: "Young Faculty Award (YFA)",
-      agency: "DARPA",
-      amount: "$500,000",
-      deadline: "Jan 22",
-      fit: 85,
-      desc: "Innovative research in neurotelemetry, edge differential privacy, and robust learning.",
-    },
-  ]
 
   const handleRunIngest = () => {
     setIngestStatus("loading")
@@ -3906,7 +3922,7 @@ export function ProductOverlay({
     reveal: { eyebrow: "MUTUAL DISCOVERY", title: "Mutual Double Opt-In Reveal" },
     verify: { eyebrow: "ON-CHAIN RECORD", title: "Proof of Priority Verification" },
     graph: { eyebrow: "KNOWLEDGE GRAPH", title: "Living Campus Graph Explorer" },
-    funding: { eyebrow: "SOLICITATION FINDER", title: "Active Grants & Solicitations" },
+    funding: { eyebrow: "", title: "Find research funding" },
     project: { eyebrow: "NEW PROJECT", title: "Create & Ingest Project" },
     "peer-review": { eyebrow: "PRE-FLIGHT AUDIT", title: "Simulated NSF Merit Review" },
     conflict: { eyebrow: "CONTRADICTION ANALYSIS", title: "Evidence Conflict Resolution" },
@@ -3916,10 +3932,10 @@ export function ProductOverlay({
 
   return (
     <div className="product-overlay workspace-overlay" onClick={onClose}>
-      <div className="overlay-shell" onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className={`overlay-shell ${overlay === "funding" ? "funding-shell" : ""}`} role={overlay === "funding" ? "dialog" : undefined} aria-modal={overlay === "funding" ? true : undefined} aria-label={overlayTitles[overlay].title} onClick={(e) => e.stopPropagation()}>
         <header className="overlay-header">
           <div>
-            <span className="overlay-eyebrow">{overlayTitles[overlay].eyebrow}</span>
+            {overlayTitles[overlay].eyebrow && <span className="overlay-eyebrow">{overlayTitles[overlay].eyebrow}</span>}
             <h2>{overlayTitles[overlay].title}</h2>
           </div>
           <button className="icon-button" onClick={onClose} title="Close overlay">
@@ -3945,10 +3961,10 @@ export function ProductOverlay({
                 <Icon name={revealAccepted ? "check" : "lock"} size={16} />
               </div>
               <div className={`reveal-card ${revealAccepted ? "revealed" : "blurred"}`}>
-                <Avatar initials="JL" color="blue" active={revealAccepted} />
+                <Avatar initials={revealAccepted ? "JH" : "??"} color="gold" active={revealAccepted} />
                 <div className="reveal-meta">
-                  <h3>{revealAccepted ? "Jordan Lee" : "Anonymous Researcher"}</h3>
-                  <span>{revealAccepted ? "PhD Researcher · Helen Wills Neuroscience Institute" : "Neuroscience · 0.4 miles away"}</span>
+                  <h3>{revealAccepted ? "Jordan Hayes" : "Anonymous Researcher"}</h3>
+                  <span>{revealAccepted ? "PhD Researcher · Helen Wills Neuroscience Institute" : "Cognitive Neuroscience · 0.4 miles away"}</span>
                   <Tag tone={revealAccepted ? "verification" : "need"}>
                     {revealAccepted ? "Mutual Consent Verified" : "Awaiting Your Acceptance"}
                   </Tag>
@@ -4045,74 +4061,7 @@ export function ProductOverlay({
           </div>
         )}
 
-        {overlay === "funding" && (
-          <div className="funding-workspace">
-            <aside className="funding-filters">
-              <label>
-                <Icon name="search" />
-                <input placeholder="Filter solicitations..." />
-              </label>
-              <strong>Agency</strong>
-              {["All agencies", "NSF", "NIH", "DARPA"].map((agency) => (
-                <button
-                  key={agency}
-                  className={agencyFilter === agency ? "active" : ""}
-                  onClick={() => {
-                    setAgencyFilter(agency)
-                    showToast(`Filtered by: ${agency}`)
-                  }}
-                >
-                  {agency}
-                </button>
-              ))}
-              <strong>Deadline</strong>
-              <button
-                className={fundingDaysFilter ? "active" : ""}
-                onClick={() => setFundingDaysFilter(!fundingDaysFilter)}
-              >
-                {fundingDaysFilter ? "All deadlines" : "Next 90 days"}
-              </button>
-            </aside>
-            <div className="grant-list">
-              {grants.map((grant, idx) => (
-                <button
-                  key={grant.title}
-                  className={activeGrantIdx === idx ? "active" : ""}
-                  onClick={() => setActiveGrantIdx(idx)}
-                >
-                  <span className="agency-mark">{grant.agency}</span>
-                  <div>
-                    <small>{grant.agency} · Deadline {grant.deadline}</small>
-                    <b>{grant.title}</b>
-                    <em>{grant.amount}</em>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <aside className="grant-detail">
-              <span>{grants[activeGrantIdx].agency} OPPORTUNITY</span>
-              <h2>{grants[activeGrantIdx].title}</h2>
-              <p>{grants[activeGrantIdx].desc}</p>
-              <button
-                className="accent-button"
-                style={{ width: "100%", justifyContent: "center", marginBottom: 8 }}
-                onClick={() => {
-                  showToast(`Linked ${grants[activeGrantIdx].title} to Neural Commons pod milestones!`)
-                  onClose()
-                }}
-              >
-                Link to Neural Commons pod
-              </button>
-              <button
-                className="soft-button"
-                style={{ width: "100%", justifyContent: "center" }}
-                onClick={() => window.open("https://www.nsf.gov", "_blank")}
-              >
-                Open official solicitation
-              </button>
-            </aside>
-          </div>
-        )}
+        {overlay === "funding" && <FundingBrowser />}
 
         {overlay === "project" && (
           <div className="project-creator">
@@ -4487,7 +4436,7 @@ export default function App() {
       )}
 
       {view === "graph" && (
-        <GraphView setView={setView} showToast={showToast} />
+        <GraphView setView={setView} />
       )}
 
       {view === "vault" && (
@@ -4518,20 +4467,7 @@ export default function App() {
       )}
 
       {/* Slide-over Drawers & Overlays */}
-      {telemetry && (
-        <TelemetryDrawer
-          onClose={() => setTelemetry(false)}
-          openOverlay={(next) => {
-            setTelemetry(false)
-            setOverlay(next)
-          }}
-          initialPrompt={telemetryPrompt}
-          onNavigate={(v) => {
-            setTelemetry(false)
-            setView(v)
-          }}
-        />
-      )}
+      {telemetry && <ResearchAssistant onClose={() => setTelemetry(false)} initialPrompt={telemetryPrompt} />}
 
       {overlay && (
         <ProductOverlay
