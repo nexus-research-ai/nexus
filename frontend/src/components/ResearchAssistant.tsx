@@ -118,7 +118,7 @@ export default function ResearchAssistant({ onClose, initialPrompt }: { onClose:
         <div className="chat-conversation" ref={scrollRef} role="log" aria-label="Conversation" aria-live="polite">
           {!messages.length && <div className="chat-welcome"><div className="chat-welcome-icon"><BookOpen size={26} /></div><h3>What are you working on?</h3><p>Start with a question or choose a starting point below.</p><div className="chat-suggestions">{suggestions.map(item => <button key={item.title} onClick={() => { setDraft(item.prompt); inputRef.current?.focus(); }}><span>{item.title}</span><Plus size={15} /></button>)}</div></div>}
           {messages.map(message => <article key={message.id} className={`chat-message ${message.role}`}><span className="chat-message-role">{message.role === 'user' ? 'You' : 'Nexus'}</span><div className="chat-message-content">{message.content}</div>{Array.isArray(message.citations) && message.citations.length > 0 && <div className="chat-sources"><span>Sources</span>{message.citations.map((citation, index) => safeOrigin(citation.origin) && <a key={`${citation.source_id}-${index}`} href={safeOrigin(citation.origin)} target="_blank" rel="noopener noreferrer">{citation.title}<ExternalLink size={12} /></a>)}</div>}</article>)}
-          {pendingId === activeId && <div className="chat-pending" role="status"><span className="spinner" />Preparing a reply…</div>}
+          {pendingId && pendingId === activeId && <div className="chat-pending" role="status"><span className="spinner" />Preparing a reply…</div>}
         </div>
         <div className="chat-composer-area">
           {storageError && <p className="chat-error" role="status">{storageError}</p>}
