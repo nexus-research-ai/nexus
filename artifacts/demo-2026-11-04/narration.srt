@@ -1,0 +1,252 @@
+1
+00:00:00,100 --> 00:00:03,570
+Research collaboration is scattered.
+LinkedIn shows credentials, GitHub shows
+
+2
+00:00:03,570 --> 00:00:07,041
+code, and published papers describe work
+that is already
+
+3
+00:00:07,041 --> 00:00:10,511
+finished. But finding someone on campus who
+is working
+
+4
+00:00:10,511 --> 00:00:13,981
+on a related problem, has the dataset you
+need,
+
+5
+00:00:13,981 --> 00:00:17,452
+or wants your skills still takes
+introductions, email, and
+
+6
+00:00:17,452 --> 00:00:17,837
+luck.
+
+7
+00:00:20,100 --> 00:00:23,613
+Nexus brings current projects and research
+needs into one
+
+8
+00:00:23,613 --> 00:00:27,126
+workspace. Discover people through what they
+are building, then
+
+9
+00:00:27,126 --> 00:00:30,639
+move from shared interests toward
+collaboration. Here, we follow
+
+10
+00:00:30,639 --> 00:00:34,152
+Aria Malik, a computer science graduate
+student at RIT.
+
+11
+00:00:35,100 --> 00:00:38,707
+We begin in the local demo workspace.
+Signing in
+
+12
+00:00:38,707 --> 00:00:42,315
+opens Aria’s research feed, with her
+profile, active projects,
+
+13
+00:00:42,315 --> 00:00:44,720
+suggested collaborators, and next steps
+together.
+
+14
+00:00:45,100 --> 00:00:48,496
+Aria is building a privacy preserving EEG
+baseline. She
+
+15
+00:00:48,496 --> 00:00:51,891
+can post the project with a clear
+description, the
+
+16
+00:00:51,891 --> 00:00:55,287
+methods she can contribute, and the
+longitudinal recordings she
+
+17
+00:00:55,287 --> 00:00:58,683
+needs. Publishing places that request in the
+feed, giving
+
+18
+00:00:58,683 --> 00:01:02,078
+another researcher a specific reason to
+start a conversation.
+
+19
+00:01:05,100 --> 00:01:08,939
+Her profile connects those interests with a
+simple collaboration
+
+20
+00:01:08,939 --> 00:01:12,777
+preference. Aria can review her research
+focus, then update
+
+21
+00:01:12,777 --> 00:01:16,616
+her availability for project teams,
+coauthoring, mentorship, or shared
+
+22
+00:01:16,616 --> 00:01:20,455
+equipment. Here, she adds undergraduate
+mentorship. The updated preference
+
+23
+00:01:20,455 --> 00:01:24,293
+stays visible in her workspace, alongside
+her current research
+
+24
+00:01:24,293 --> 00:01:24,720
+needs.
+
+25
+00:01:25,100 --> 00:01:28,734
+Jordan Lee offers mobile EEG recordings and
+is looking
+
+26
+00:01:28,734 --> 00:01:32,368
+for help with federated learning. That
+complements Aria’s project.
+
+27
+00:01:32,368 --> 00:01:36,002
+Their public interests explain the
+connection, while confidential project
+
+28
+00:01:36,002 --> 00:01:39,636
+details require mutual acceptance. In this
+example, Jordan has
+
+29
+00:01:39,636 --> 00:01:43,270
+already accepted an introduction. Aria
+reviews the invitation and
+
+30
+00:01:43,270 --> 00:01:46,904
+accepts locally. The next step is to agree
+on
+
+31
+00:01:46,904 --> 00:01:48,923
+dataset access and permitted use.
+
+32
+00:01:50,100 --> 00:01:53,113
+The network extends beyond one match.
+Suggested researchers show
+
+33
+00:01:53,113 --> 00:01:56,127
+their fields and skills, and Aria can follow
+someone
+
+34
+00:01:56,127 --> 00:01:58,805
+whose work she wants to keep up with.
+
+35
+00:02:00,100 --> 00:02:03,656
+Find Collaborators makes discovery more
+focused. Searching for datasets
+
+36
+00:02:03,656 --> 00:02:07,212
+brings up projects with relevant resources,
+including EEG recordings,
+
+37
+00:02:07,212 --> 00:02:10,769
+clinical cohorts, and single cell data. Each
+card names
+
+38
+00:02:10,769 --> 00:02:14,325
+the researcher and shows what the project
+offers and
+
+39
+00:02:14,325 --> 00:02:14,720
+needs.
+
+40
+00:02:15,100 --> 00:02:18,859
+Searching artificial intelligence explores
+the imported literature collection. Results
+
+41
+00:02:18,859 --> 00:02:22,619
+include titles, authors, abstract excerpts,
+and original source links.
+
+42
+00:02:22,619 --> 00:02:26,378
+Aria can read an abstract, shortlist a
+paper, and
+
+43
+00:02:26,378 --> 00:02:29,720
+inspect its source before relying on a
+claim.
+
+44
+00:02:30,100 --> 00:02:33,430
+The knowledge graph adds another view of the
+research
+
+45
+00:02:33,430 --> 00:02:36,760
+landscape. Selecting a node reveals nearby
+researchers, papers, and
+
+46
+00:02:36,760 --> 00:02:39,720
+topics, helping Aria explore connections
+across the collection.
+
+47
+00:02:40,100 --> 00:02:43,563
+Funding brings example opportunities into
+the workspace. Aria can
+
+48
+00:02:43,563 --> 00:02:47,026
+compare research areas and eligibility, then
+check the current
+
+49
+00:02:47,026 --> 00:02:49,720
+agency solicitation before deciding what to
+pursue.
+
+50
+00:02:50,100 --> 00:02:53,799
+Nexus AI preserves research conversations
+and source evidence. Saved
+
+51
+00:02:53,799 --> 00:02:56,675
+chats and alerts keep next steps visible.
+
+52
+00:02:57,100 --> 00:02:59,720
+Nexus. Move research forward, together.

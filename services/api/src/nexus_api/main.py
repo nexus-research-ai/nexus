@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import vault_router, discovery_router, funding_router, intelligence_router
+from .routes import vault_router, discovery_router, funding_router, intelligence_router, literature_router
 
 app = FastAPI(
     title="Nexus Scientific Research & Grant Intelligence API",
@@ -25,6 +25,12 @@ app.include_router(vault_router, prefix="/api/v1/vault", tags=["Vault"])
 app.include_router(discovery_router, prefix="/api/v1/discovery", tags=["Discovery"])
 app.include_router(funding_router, prefix="/api/v1/funding", tags=["Funding"])
 app.include_router(intelligence_router, prefix="/api/v1/intelligence", tags=["Intelligence"])
+app.include_router(literature_router, prefix="/api/v1/literature", tags=["Literature"])
+
+# API v2 and root routes for same-origin frontend compatibility
+app.include_router(discovery_router, prefix="/api/v2", tags=["Discovery v2"])
+app.include_router(intelligence_router, prefix="/api/v2", tags=["Intelligence v2"])
+app.include_router(discovery_router, prefix="", tags=["Discovery Root"])
 
 # API v2 and root routes for same-origin frontend compatibility
 app.include_router(discovery_router, prefix="/api/v2", tags=["Discovery v2"])

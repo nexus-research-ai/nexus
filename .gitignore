@@ -7,15 +7,20 @@ __pycache__/
 *.egg-info/
 node_modules/
 .next/
+.venv/
+*.tsbuildinfo
 
-# Data and local storage (never commit bulk corpora, PDFs, databases, or runtime caches)
-data/
+# Mac OS
+.DS_Store
 
-# Local databases, caches, and runtime volumes
-*.db
-*.sqlite
-*.sqlite3
+# Data files (keep gitkeep, prompts, taxonomies, and demo fixtures)
+data/*
+!data/.gitkeep
+!data/prompts/
+!data/taxonomies/
+!data/demo_profiles.json
+!data/demo_parsed_papers.json
+
+# Tool caches
+.playwright-mcp/
 .cache/
-runtime-work/
-logs/
-

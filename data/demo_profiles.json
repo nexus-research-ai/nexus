@@ -1,0 +1,366 @@
+[
+  {
+    "id": "user-aria",
+    "name": "Aria Malik",
+    "initials": "AM",
+    "avatar_url": "/avatars/aria_malik.jpg",
+    "degree": "MSCS Candidate",
+    "title": "Graduate Researcher",
+    "dept": "EECS \u00b7 Helen Wills Neuroscience",
+    "institution": "UC Berkeley",
+    "bio": "Representation learning, federated adaptation layers, and non-invasive EEG decoding. Building privacy-preserving models for neural prosthetics.",
+    "color": "gold",
+    "role": "Lead Author / Pod Lead",
+    "offers": [
+      "Optimal transport",
+      "Adapter weights",
+      "PyTorch codebase",
+      "Differential privacy auditing"
+    ],
+    "needs": [
+      "Longitudinal EEG",
+      "Clinical sleep cohorts",
+      "Mobile 128-channel EEG",
+      "Compute grant"
+    ],
+    "stage": "PROTOTYPE",
+    "degree_label": "MSCS",
+    "active_grant": "NSF Smart & Connected Health ($1,200,000)",
+    "readiness_score": 72,
+    "certificates": [
+      "NX-8821",
+      "NX-8822"
+    ]
+  },
+  {
+    "id": "user-jon",
+    "name": "Jon Lee",
+    "initials": "JL",
+    "avatar_url": "/avatars/jon_lee.jpg",
+    "degree": "PhD Candidate",
+    "title": "Systems & Privacy Researcher",
+    "dept": "Computer Science & Engineering",
+    "institution": "UC Berkeley",
+    "bio": "Distributed optimization, split learning, and zero-knowledge model partitioning under extreme bandwidth constraints.",
+    "color": "blue",
+    "role": "Pod Member \u00b7 Systems",
+    "offers": [
+      "Split learning kernels",
+      "CUDA parameter clipping",
+      "Zero-leakage gradients"
+    ],
+    "needs": [
+      "Multi-site sensor telemetry",
+      "FPGA testbed",
+      "Edge benchmark suites"
+    ],
+    "stage": "ACTIVE",
+    "degree_label": "PhD",
+    "active_grant": "DARPA Young Faculty Award ($500,000)",
+    "readiness_score": 85,
+    "certificates": [
+      "NX-4109"
+    ]
+  },
+  {
+    "id": "user-maya",
+    "name": "Maya Rodriguez",
+    "initials": "MR",
+    "avatar_url": "/avatars/maya_rodriguez.jpg",
+    "degree": "Postdoctoral Fellow",
+    "title": "Autonomous Systems Engineer",
+    "dept": "Robotics & Autonomous Systems",
+    "institution": "UC Berkeley",
+    "bio": "Soft conductive elastomers, continuous micro-strain monitoring, and real-time motion artifact filtering for aerial robots.",
+    "color": "violet",
+    "role": "Pod Member \u00b7 Hardware",
+    "offers": [
+      "Cleanroom fabrication",
+      "Micro-strain sensor hardware",
+      "Mechanical load testing"
+    ],
+    "needs": [
+      "Real-time drift modeling",
+      "Embedded DSP firmware",
+      "Field trial partner"
+    ],
+    "stage": "DISCOVERY",
+    "degree_label": "Postdoc",
+    "active_grant": "NSF CAREER ($600,000)",
+    "readiness_score": 68,
+    "certificates": [
+      "NX-5531"
+    ]
+  },
+  {
+    "id": "user-rao",
+    "name": "Prof. Sarah Rao",
+    "initials": "SR",
+    "avatar_url": "/avatars/sarah_rao.jpg",
+    "degree": "Associate Professor",
+    "title": "Principal Investigator & Lab Director",
+    "dept": "EECS & Computational Precision Health",
+    "institution": "UC Berkeley",
+    "bio": "Differential privacy bounds, federated healthcare fleets, and provable algorithmic fairness in non-invasive neural decoders.",
+    "color": "teal",
+    "role": "Faculty Advisor / Co-PI",
+    "offers": [
+      "DP formal verification",
+      "Multi-site IRB navigation",
+      "Nature MI pre-print access"
+    ],
+    "needs": [
+      "Clinical hospital partners",
+      "Pediatric neuro-telemetry",
+      "DOE supercomputing allocation"
+    ],
+    "stage": "PRE-PRINT",
+    "degree_label": "Faculty",
+    "active_grant": "NSF Smart and Connected Health ($1,200,000)",
+    "readiness_score": 94,
+    "certificates": [
+      "NX-1002",
+      "NX-1003"
+    ]
+  },
+  {
+    "id": "user-jordan",
+    "name": "Jordan Hayes",
+    "initials": "JH",
+    "avatar_url": "/avatars/jordan_hayes.jpg",
+    "degree": "PhD Candidate",
+    "title": "Cognitive Neuroscientist",
+    "dept": "Helen Wills Neuroscience Institute",
+    "institution": "UC Berkeley",
+    "bio": "High-density mobile neurotelemetry, 128-channel dry electrode recordings, and auditory cortex event-related potential decoding.",
+    "color": "gold",
+    "role": "Collaborator \u00b7 Mutual Match",
+    "offers": [
+      "128-channel mobile EEG lab",
+      "Event-related potential pipelines",
+      "Clinical cohort access"
+    ],
+    "needs": [
+      "Federated representation learning",
+      "Cross-subject latent alignment",
+      "Privacy audit tools"
+    ],
+    "stage": "PROTOTYPE",
+    "degree_label": "PhD",
+    "active_grant": "NIH R21 Exploratory Research ($275,000)",
+    "readiness_score": 91,
+    "certificates": [
+      "NX-6218"
+    ]
+  },
+  {
+    "id": "user-marcus",
+    "name": "Marcus Vance",
+    "initials": "MV",
+    "avatar_url": "/avatars/marcus_vance.jpg",
+    "degree": "PhD Researcher",
+    "title": "Neuroengineering Specialist",
+    "dept": "Bioengineering & Neurotechnology",
+    "institution": "UC Berkeley",
+    "bio": "Synchronized multimodal telemetry for freely moving subjects, sub-millivolt surface biopotentials, and wireless optogenetic sync.",
+    "color": "orange",
+    "role": "Campus Researcher",
+    "offers": [
+      "Optical hardware sync",
+      "Sub-millivolt amplifiers",
+      "Benchmarking telemetry"
+    ],
+    "needs": [
+      "Cross-cohort validation",
+      "Wireless telemetry rig",
+      "Biopotential filtering"
+    ],
+    "stage": "PROTOTYPE",
+    "degree_label": "PhD",
+    "active_grant": "DARPA Young Faculty Award ($500,000)",
+    "readiness_score": 77,
+    "certificates": [
+      "NX-7714"
+    ]
+  },
+  {
+    "id": "user-emily",
+    "name": "Emily Chen",
+    "initials": "EC",
+    "avatar_url": "/avatars/emily_chen.jpg",
+    "degree": "PhD Candidate",
+    "title": "Computer Vision & Multimodal AI",
+    "dept": "EECS \u00b7 Berkeley AI Research (BAIR)",
+    "institution": "UC Berkeley",
+    "bio": "Pixel-to-proof visual grounding, scientific figure segmentation using Meta SAM 3.1, and diagrammatic reasoning over neural charts.",
+    "color": "violet",
+    "role": "Vision Specialist",
+    "offers": [
+      "SAM 3.1 fine-tuning",
+      "Scientific diagram parsing",
+      "Multimodal figure grounding"
+    ],
+    "needs": [
+      "Microscopy datasets",
+      "Neural spectrograms",
+      "Grant figures"
+    ],
+    "stage": "PRE-PRINT",
+    "degree_label": "PhD",
+    "active_grant": "NSF CAREER ($600,000)",
+    "readiness_score": 88,
+    "certificates": [
+      "NX-3390"
+    ]
+  },
+  {
+    "id": "user-david",
+    "name": "David Miller",
+    "initials": "DM",
+    "avatar_url": "/avatars/david_miller.jpg",
+    "degree": "Staff Research Scientist",
+    "title": "Bioinformatics & Genomics",
+    "dept": "Computational Biology & Genomics",
+    "institution": "UC Berkeley",
+    "bio": "Single-cell transcriptome alignment, differential gene expression, and federated patient cohort clustering.",
+    "color": "blue",
+    "role": "Bioinformatics Scientist",
+    "offers": [
+      "Single-cell pipelines",
+      "Genomic manifold alignment",
+      "Nextflow workflows"
+    ],
+    "needs": [
+      "Differential privacy bounds",
+      "GPU clustering clusters",
+      "Multi-institution consortium"
+    ],
+    "stage": "ACTIVE",
+    "degree_label": "Staff Scientist",
+    "active_grant": "NIH R01 Research Project ($1,850,000)",
+    "readiness_score": 82,
+    "certificates": [
+      "NX-2045"
+    ]
+  },
+  {
+    "id": "user-rachel",
+    "name": "Rachel Adams",
+    "initials": "RA",
+    "avatar_url": "/avatars/rachel_adams.jpg",
+    "degree": "MS Candidate",
+    "title": "Aerospace & Embedded Systems",
+    "dept": "Mechanical Engineering",
+    "institution": "UC Berkeley",
+    "bio": "Ultra-lightweight sensor packages for UAVs, structural vibration monitoring, and micro-strain telemetry.",
+    "color": "teal",
+    "role": "Mechanical Engineer",
+    "offers": [
+      "UAV airframe design",
+      "Composite materials testing",
+      "CAD/FEA simulations"
+    ],
+    "needs": [
+      "Wireless telemetry sync",
+      "Embedded ML inference",
+      "Field deployment sites"
+    ],
+    "stage": "DISCOVERY",
+    "degree_label": "MS",
+    "active_grant": "NASA Space Technology Grant ($175,000)",
+    "readiness_score": 64,
+    "certificates": [
+      "NX-4912"
+    ]
+  },
+  {
+    "id": "user-alex",
+    "name": "Alex Rivera",
+    "initials": "AR",
+    "avatar_url": "/avatars/alex_rivera.jpg",
+    "degree": "Graduate Researcher",
+    "title": "Health Informatics Specialist",
+    "dept": "School of Public Health & EECS",
+    "institution": "UC Berkeley",
+    "bio": "Differential privacy bounds in longitudinal digital health, clinical trials data sharing, and ethical AI in biometrics.",
+    "color": "gold",
+    "role": "Informatics Researcher",
+    "offers": [
+      "DP audit scripts",
+      "Synthetic cohort generators",
+      "Ethical AI benchmarks"
+    ],
+    "needs": [
+      "Real EEG telemetry",
+      "Secure enclave access",
+      "Clinical collaborators"
+    ],
+    "stage": "ACTIVE",
+    "degree_label": "PhD",
+    "active_grant": "NIH R21 Exploratory Research ($275,000)",
+    "readiness_score": 79,
+    "certificates": [
+      "NX-9104"
+    ]
+  },
+  {
+    "id": "user-tyler",
+    "name": "Tyler Scott",
+    "initials": "TS",
+    "avatar_url": "/avatars/tyler_scott.jpg",
+    "degree": "Postdoctoral Fellow",
+    "title": "Quantum & Hardware Systems",
+    "dept": "Electrical Engineering & Computer Sciences",
+    "institution": "UC Berkeley",
+    "bio": "Sub-threshold neuromorphic circuits, cryogenic CMOS readout for biopotentials, and on-chip cryptographic accelerators.",
+    "color": "orange",
+    "role": "Hardware Postdoc",
+    "offers": [
+      "ASIC design tape-outs",
+      "FPGA hardware acceleration",
+      "Cryogenic test setups"
+    ],
+    "needs": [
+      "Spike-based EEG data",
+      "Low-power algorithm partners",
+      "Clinical verification"
+    ],
+    "stage": "PROTOTYPE",
+    "degree_label": "Postdoc",
+    "active_grant": "DARPA Young Faculty Award ($500,000)",
+    "readiness_score": 86,
+    "certificates": [
+      "NX-6721"
+    ]
+  },
+  {
+    "id": "user-elena",
+    "name": "Prof. Elena Vasquez",
+    "initials": "EV",
+    "avatar_url": "/avatars/elena_vasquez.jpg",
+    "degree": "Full Professor",
+    "title": "Director, Neuroengineering Center",
+    "dept": "Bioengineering & Helen Wills Neuroscience",
+    "institution": "UC Berkeley",
+    "bio": "Non-invasive neural interfaces, cortical plasticity, closed-loop neural stimulation, and cross-disciplinary grant mentorship.",
+    "color": "violet",
+    "role": "Department Director / Senior PI",
+    "offers": [
+      "Center lab space",
+      "High-density primate/human EEG suites",
+      "Institutional support"
+    ],
+    "needs": [
+      "Federated decoding methods",
+      "Scalable cloud inference",
+      "Junior Co-PIs"
+    ],
+    "stage": "ACTIVE",
+    "degree_label": "Faculty",
+    "active_grant": "NSF Smart and Connected Health ($1,200,000)",
+    "readiness_score": 98,
+    "certificates": [
+      "NX-1001"
+    ]
+  }
+]

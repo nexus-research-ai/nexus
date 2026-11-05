@@ -1,35 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import {
-  Network,
-  Search,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  RefreshCw,
-  X,
-  ExternalLink,
-  Target,
-  Focus,
-  Layers,
-  RotateCcw,
-  BookOpen,
-  Star,
-  Calendar,
-  User,
-  Moon,
-  Sun,
-  ChevronRight,
-} from 'lucide-react';
+import type { ForceGraphMethods, NodeObject } from 'react-force-graph-2d';
+import { Network, Search, ZoomIn, ZoomOut, Maximize2, RefreshCw, X, ExternalLink, Focus, ArrowLeft } from 'lucide-react';
 import { api, type GraphData, type GraphNode } from '@/lib/api';
 import { safeOrigin } from '@/lib/editor';
 
-// Safe dynamic import for browser-only react-force-graph
-const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
-  ssr: false,
-});
+const ForceGraph2D = dynamic(() => import('react-force-graph-2d').then(module => module.default<GraphNode>), { ssr: false });
+const nodeColors = { faculty: '#2563eb', paper: '#0f766e', topic: '#b45309' };
+const nodeLabels = { faculty: 'Faculty', paper: 'Paper', topic: 'Topic' };
+type PositionedNode = GraphNode & { x: number; y: number };
+type RenderLink = { source: string | GraphNode; target: string | GraphNode; relationship: string };
+const endpointId = (endpoint: RenderLink['source']) => typeof endpoint === 'object' ? endpoint.id : endpoint;
 
 interface GraphViewerProps {
   onSearchTopic?: (topic: string) => void;
@@ -38,921 +21,213 @@ interface GraphViewerProps {
   proposalOpen?: boolean;
 }
 
-export default function GraphViewer({
-  onSearchTopic,
-  onAttachSource,
-  attachedSourceIds = [],
-  proposalOpen = false,
-}: GraphViewerProps) {
-  const [data, setData] = useState<GraphData>({ nodes: [], links: [], clusters: [] });
+export default function GraphViewer({ onSearchTopic, onAttachSource, attachedSourceIds = [], proposalOpen = false }: GraphViewerProps) {
+  const [data, setData] = useState<GraphData>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'faculty' | 'paper' | 'topic'>('all');
-  const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
-  const [topicQuery, setTopicQuery] = useState('');
-  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
-  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-  const [centerNodeId, setCenterNodeId] = useState<string | null>(null);
-  const [hops, setHops] = useState<number>(2);
-  const [nodeLimit, setNodeLimit] = useState<number>(2500);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<any>(null);
+  const [query, setQuery] = useState('');
+  const [appliedQuery, setAppliedQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [cluster, setCluster] = useState('');
+  const [centerId, setCenterId] = useState<string | null>(null);
+  const [hops, setHops] = useState(1);
+  const [limit, setLimit] = useState(300);
+  const [refresh, setRefresh] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const lastClickRef = useRef<{ id: string; time: number }>({ id: '', time: 0 });
-
-  const loadGraph = useCallback(
-    async (
-      topic?: string,
-      centerId?: string | null,
-      hopsCount = 2,
-      limit = 300
-    ) => {
-      setLoading(true);
-      setError('');
-      try {
-        const graphData = await api.graph(
-          limit,
-          topic?.trim() || undefined,
-          centerId || undefined,
-          hopsCount
-        );
-        setData(graphData);
-        setTimeout(() => {
-          graphRef.current?.zoomToFit(400, 32);
-        }, 350);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Could not load knowledge graph.');
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<ForceGraphMethods<GraphNode> | undefined>(undefined);
+  const fitPending = useRef(true);
+  const configuredGraph = useRef<object | null>(null);
 
   useEffect(() => {
-    void loadGraph(undefined, undefined, hops, nodeLimit);
-  }, [loadGraph, nodeLimit]);
+    let active = true;
+    setLoading(true);
+    setError('');
+    api.graph(limit, appliedQuery || undefined, centerId || undefined, hops)
+      .then(result => {
+        if (!active) return;
+        setData(result);
+        setSelectedId(current => result.nodes.some(node => node.id === current) ? current : null);
+        fitPending.current = true;
+      })
+      .catch(err => { if (active) setError(err instanceof Error ? err.message : 'Could not load the knowledge graph.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [limit, appliedQuery, centerId, hops, refresh]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      if (entries[0]) {
-        setDimensions({
-          width: entries[0].contentRect.width,
-          height: entries[0].contentRect.height,
-        });
-      }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setDimensions({ width: Math.floor(entry.contentRect.width), height: Math.floor(entry.contentRect.height) });
+      fitPending.current = true;
     });
-    observer.observe(containerRef.current);
+    observer.observe(canvas);
     return () => observer.disconnect();
   }, []);
 
-  const handleFilterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearchDropdownOpen(false);
-    void loadGraph(topicQuery, centerNodeId, hops, nodeLimit);
-  };
+  // The renderer mutates nodes and link endpoints; keep that state separate from the response.
+  const graphData = useMemo(() => {
+    const nodes = data.nodes.filter(node => (typeFilter === 'all' || node.type === typeFilter) && (!cluster || node.cluster === cluster));
+    const ids = new Set(nodes.map(node => node.id));
+    return {
+      nodes: nodes.map((node, index) => ({ ...node, x: Math.cos(index * 2.4) * Math.sqrt(index + 1) * 14, y: Math.sin(index * 2.4) * Math.sqrt(index + 1) * 14 })),
+      links: data.links.filter(link => ids.has(endpointId(link.source)) && ids.has(endpointId(link.target)))
+        .map(link => ({ ...link, source: endpointId(link.source), target: endpointId(link.target) })),
+    };
+  }, [data, typeFilter, cluster]);
 
-  const handleResetFilter = () => {
-    setTopicQuery('');
-    setSelectedCluster(null);
-    setSearchDropdownOpen(false);
-    void loadGraph('', centerNodeId, hops, nodeLimit);
-  };
+  const areas = useMemo(() => [...new Set(data.nodes.map(node => node.cluster).filter((name): name is string => Boolean(name)))].sort(), [data]);
+  const selectedNode = data.nodes.find(node => node.id === selectedId);
+  const connections = useMemo(() => data.links.filter(link => endpointId(link.source) === selectedId || endpointId(link.target) === selectedId), [data, selectedId]);
 
-  const handleFocusEgo = (nodeId: string) => {
-    setCenterNodeId(nodeId);
-    setSelectedCluster(null);
-    setSearchDropdownOpen(false);
-    void loadGraph(topicQuery, nodeId, hops, nodeLimit);
-  };
-
-  const handleExitEgo = () => {
-    setCenterNodeId(null);
-    void loadGraph(topicQuery, null, hops, nodeLimit);
-  };
-
-  const handleHopsChange = (newHops: number) => {
-    setHops(newHops);
-    if (centerNodeId) {
-      void loadGraph(topicQuery, centerNodeId, newHops, nodeLimit);
-    }
-  };
-
-  const handleLimitChange = (newLimit: number) => {
-    setNodeLimit(newLimit);
-    void loadGraph(topicQuery, centerNodeId, hops, newLimit);
-  };
-
-  // Fixed Cluster Selection with Smooth Camera Fly-To Bounding Box
-  const handleClusterSelect = (clusterName: string | null) => {
-    const nextCluster = selectedCluster === clusterName ? null : clusterName;
-    setSelectedCluster(nextCluster);
-
-    if (nextCluster) {
-      const clusterNodes = data.nodes.filter(
-        (n) => n.cluster?.toLowerCase() === nextCluster.toLowerCase()
-      );
-      if (clusterNodes.length > 0) {
-        const xs = clusterNodes.map((n) => n.x ?? 0);
-        const ys = clusterNodes.map((n) => n.y ?? 0);
-        const minX = Math.min(...xs), maxX = Math.max(...xs);
-        const minY = Math.min(...ys), maxY = Math.max(...ys);
-        const cx = (minX + maxX) / 2;
-        const cy = (minY + maxY) / 2;
-        graphRef.current?.centerAt(cx, cy, 500);
-        graphRef.current?.zoom(1.8, 500);
-      }
-    } else {
-      graphRef.current?.zoomToFit(500, 32);
-    }
-  };
-
-  const handleFlyToNode = (node: GraphNode) => {
-    setSelectedNode(node);
-    setSearchDropdownOpen(false);
-    if (node.x !== undefined && node.y !== undefined) {
-      graphRef.current?.centerAt(node.x, node.y, 600);
-      graphRef.current?.zoom(2.4, 600);
-    }
-  };
-
-  const handleNodeClick = (node: any) => {
-    const now = Date.now();
-    if (lastClickRef.current.id === node.id && now - lastClickRef.current.time < 350) {
-      handleFocusEgo(node.id);
-      lastClickRef.current = { id: '', time: 0 };
-      return;
-    }
-    lastClickRef.current = { id: node.id, time: now };
-    setSelectedNode(node as GraphNode);
-  };
-
-  // Search autocomplete candidates
-  const searchMatches = topicQuery.trim()
-    ? data.nodes
-        .filter((n) => n.name.toLowerCase().includes(topicQuery.trim().toLowerCase()))
-        .slice(0, 6)
-    : [];
-
-  // Filter nodes according to type and cluster selectors (matched by cluster name)
-  const filteredNodes = data.nodes.filter((node) => {
-    if (typeFilter !== 'all' && node.type !== typeFilter) return false;
-    if (selectedCluster && node.cluster?.toLowerCase() !== selectedCluster.toLowerCase()) return false;
-    return true;
-  });
-
-  const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
-  const filteredLinks = data.links.filter((l) => {
-    const sId = typeof l.source === 'object' ? (l.source as any).id : l.source;
-    const tId = typeof l.target === 'object' ? (l.target as any).id : l.target;
-    return filteredNodeIds.has(sId) && filteredNodeIds.has(tId);
-  });
-
-  const filteredGraphData = {
-    nodes: filteredNodes,
-    links: filteredLinks,
-  };
-
-  const facultyCount = data.nodes.filter((n) => n.type === 'faculty').length;
-  const paperCount = data.nodes.filter((n) => n.type === 'paper').length;
-  const topicCount = data.nodes.filter((n) => n.type === 'topic').length;
-
-  // Modern High-Performance Canvas Renderer with Avatars & Auras
-  const drawNode = useCallback(
-    (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      const isCenter = Boolean(node.is_center);
-      const isSelected = selectedNode?.id === node.id;
-
-      let r = 5;
-      if (isCenter) r = 10;
-      else if (node.type === 'faculty') r = 7.5;
-      else if (node.type === 'paper') r = 5.5;
-      else if (node.type === 'topic') r = 4.5;
-      if (isSelected) r += 3;
-
-      const baseColor =
-        node.type === 'faculty'
-          ? (isDarkMode ? '#3b82f6' : '#2563eb')
-          : node.type === 'paper'
-          ? (isDarkMode ? '#10b981' : '#0f766e')
-          : node.type === 'topic'
-          ? '#d97706'
-          : '#64748b';
-
-      const nodeColor = node.cluster_color || baseColor;
-
-      ctx.save();
-
-      // Soft Atmospheric Aura
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, r + (isCenter ? 6 : 3.5), 0, 2 * Math.PI, false);
-      ctx.fillStyle =
-        node.type === 'faculty'
-          ? (isDarkMode ? 'rgba(59, 130, 246, 0.25)' : 'rgba(37, 99, 235, 0.15)')
-          : node.type === 'paper'
-          ? (isDarkMode ? 'rgba(16, 185, 129, 0.25)' : 'rgba(15, 118, 110, 0.15)')
-          : 'rgba(217, 119, 6, 0.15)';
-      ctx.fill();
-
-      // Center Node Radar Halo
-      if (isCenter) {
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, r + 7, 0, 2 * Math.PI, false);
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = Math.max(1.5, 2.5 / globalScale);
-        ctx.setLineDash([4 / globalScale, 3 / globalScale]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      // Selected Node Halo
-      if (isSelected) {
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, r + 4, 0, 2 * Math.PI, false);
-        ctx.strokeStyle = isDarkMode ? '#60a5fa' : '#1d4ed8';
-        ctx.lineWidth = Math.max(1.5, 2.5 / globalScale);
-        ctx.stroke();
-      }
-
-      // Main Node Shape
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
-      ctx.fillStyle = nodeColor;
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, 1.6 / globalScale);
-      ctx.strokeStyle = isDarkMode ? '#1e293b' : '#ffffff';
-      ctx.stroke();
-
-      // Avatar Initials on Faculty Nodes
-      if (node.type === 'faculty' && node.name && globalScale >= 0.8) {
-        const initials = String(node.name)
-          .split(' ')
-          .map((p) => p[0])
-          .filter(Boolean)
-          .slice(0, 2)
-          .join('')
-          .toUpperCase();
-        const initSize = Math.max(6, 7 / globalScale);
-        ctx.font = `700 ${initSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(initials, node.x, node.y);
-      }
-
-      // Semantic Zoom Level-Of-Detail (LOD) Labels
-      const shouldDrawLabel = globalScale >= 1.05 || isCenter || isSelected;
-      if (shouldDrawLabel && node.name) {
-        const rawName = String(node.name);
-        const label = rawName.length > 34 ? rawName.slice(0, 32) + '…' : rawName;
-        const fontSize = Math.max(8, (isCenter ? 12 : 10) / globalScale);
-        ctx.font = `${isCenter ? '650' : '500'} ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-
-        const textWidth = ctx.measureText(label).width;
-        const textHeight = fontSize;
-        const padX = 5 / globalScale;
-        const padY = 2.5 / globalScale;
-        const rectX = node.x - textWidth / 2 - padX;
-        const rectY = node.y + r + 3.5 / globalScale;
-        const rectW = textWidth + padX * 2;
-        const rectH = textHeight + padY * 2;
-
-        // Label pill background
-        ctx.fillStyle = isDarkMode
-          ? isCenter
-            ? 'rgba(69, 10, 10, 0.95)'
-            : 'rgba(15, 23, 42, 0.92)'
-          : isCenter
-          ? 'rgba(254, 242, 242, 0.96)'
-          : node.type === 'paper'
-          ? 'rgba(240, 253, 250, 0.95)'
-          : 'rgba(255, 255, 255, 0.95)';
-        ctx.fillRect(rectX, rectY, rectW, rectH);
-
-        ctx.strokeStyle = isDarkMode
-          ? isCenter
-            ? 'rgba(239, 68, 68, 0.5)'
-            : 'rgba(51, 65, 85, 0.8)'
-          : isCenter
-          ? 'rgba(220, 38, 38, 0.35)'
-          : node.type === 'paper'
-          ? 'rgba(15, 118, 110, 0.3)'
-          : 'rgba(0, 0, 0, 0.12)';
-        ctx.lineWidth = 0.6 / globalScale;
-        ctx.strokeRect(rectX, rectY, rectW, rectH);
-
-        // Text label
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = isDarkMode
-          ? isCenter
-            ? '#fca5a5'
-            : '#f1f5f9'
-          : isCenter
-          ? '#991b1b'
-          : node.type === 'paper'
-          ? '#0f766e'
-          : '#0f172a';
-        ctx.fillText(label, node.x, rectY + rectH / 2);
-      }
-
-      ctx.restore();
-    },
-    [selectedNode, isDarkMode]
-  );
-
-  const paintPointerArea = useCallback((node: any, color: string, ctx: CanvasRenderingContext2D) => {
-    const r = node.is_center ? 14 : 9;
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
-    ctx.fillStyle = color;
-    ctx.fill();
+  const fitGraph = useCallback(() => {
+    graphRef.current?.zoomToFit(350, 48);
+    fitPending.current = false;
   }, []);
 
+  useEffect(() => {
+    if (loading || dimensions.width <= 0 || dimensions.height <= 0) return;
+    const timer = window.setTimeout(() => graphRef.current?.zoomToFit(250, 48), 150);
+    return () => window.clearTimeout(timer);
+  }, [dimensions.width, dimensions.height, loading]);
+
+  const reset = () => {
+    setQuery('');
+    setAppliedQuery('');
+    setTypeFilter('all');
+    setCluster('');
+    setCenterId(null);
+    setSelectedId(null);
+    fitPending.current = true;
+  };
+
+  const focusNode = (id: string) => {
+    setTypeFilter('all');
+    setCluster('');
+    setAppliedQuery('');
+    setQuery('');
+    setCenterId(id);
+  };
+
+  const selectNode = (id: string) => {
+    setSelectedId(id);
+    const node = graphData.nodes.find(item => item.id === id);
+    if (node?.x !== undefined && node.y !== undefined) graphRef.current?.centerAt(node.x, node.y, 350);
+  };
+
+  const drawNode = useCallback((node: GraphNode, ctx: CanvasRenderingContext2D, scale: number) => {
+    const { x, y } = node as PositionedNode;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    const selected = node.id === selectedId;
+    const baseRadius = node.type === 'faculty' ? 6 : node.type === 'topic' ? 5 : 3.5;
+    const radius = Math.max(baseRadius, (selected ? 5 : node.type === 'paper' ? 2 : 3) / scale);
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = nodeColors[node.type];
+    ctx.fill();
+    ctx.lineWidth = (selected ? 2 : 1) / scale;
+    ctx.strokeStyle = selected ? '#17211f' : '#ffffff';
+    ctx.stroke();
+    if (selected || node.is_center || (scale > 1.6 && node.type !== 'paper')) {
+      const fontSize = 12 / scale;
+      const label = node.name.length > 40 ? `${node.name.slice(0, 38)}…` : node.name;
+      ctx.font = `${selected ? 600 : 400} ${fontSize}px sans-serif`;
+      const width = ctx.measureText(label).width;
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.fillRect(x - width / 2 - 3 / scale, y + radius + 2 / scale, width + 6 / scale, 18 / scale);
+      ctx.fillStyle = '#253746';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, x, y + radius + 11 / scale);
+    }
+  }, [selectedId]);
+
+  const hasFilters = Boolean(appliedQuery || cluster || typeFilter !== 'all' || centerId);
+
   return (
-    <div className={`graph-container ${isDarkMode ? 'dark' : ''}`} ref={containerRef}>
-      {/* Top Header & Toolbar */}
-      <div className="graph-toolbar">
-        <div className="graph-title-badge">
-          <Network className={`w-4 h-4 ${isDarkMode ? 'text-blue-400' : 'text-[#225bb2]'}`} />
-          <span>Knowledge Graph</span>
-          <span className="count-badge">
-            {filteredNodes.length} nodes · {filteredLinks.length} edges
-          </span>
-        </div>
-
-        {/* Live Search Autocomplete Form */}
-        <div className="graph-search-container">
-          <form onSubmit={handleFilterSubmit} className="graph-search-form">
-            <div className="input-with-icon">
-              <Search className="w-3.5 h-3.5 text-[#536779]" />
-              <input
-                type="text"
-                placeholder="Search faculty or paper…"
-                value={topicQuery}
-                onChange={(e) => {
-                  setTopicQuery(e.target.value);
-                  setSearchDropdownOpen(true);
-                }}
-                onFocus={() => setSearchDropdownOpen(true)}
-              />
-            </div>
-            <button type="submit" className="button small">Filter</button>
-            {topicQuery && (
-              <button type="button" className="button small" onClick={handleResetFilter}>
-                Clear
-              </button>
-            )}
-          </form>
-
-          {/* Autocomplete Dropdown with Direct Fly-To */}
-          {searchDropdownOpen && searchMatches.length > 0 && (
-            <div className="graph-search-dropdown">
-              {searchMatches.map((match) => (
-                <div
-                  key={match.id}
-                  className="graph-search-item"
-                  onClick={() => handleFlyToNode(match)}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 600 }}>{match.name}</span>
-                    {match.metadata?.faculty_author && (
-                      <span className="muted" style={{ fontSize: 11 }}>
-                        By {match.metadata.faculty_author}
-                      </span>
-                    )}
-                  </div>
-                  <span className={`item-type ${match.type}`}>{match.type}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Type Filters */}
-        <div className="graph-type-filters">
-          <button
-            type="button"
-            className={`filter-chip ${typeFilter === 'all' ? 'active' : ''}`}
-            onClick={() => setTypeFilter('all')}
-          >
-            All ({data.nodes.length})
-          </button>
-          <button
-            type="button"
-            className={`filter-chip faculty ${typeFilter === 'faculty' ? 'active' : ''}`}
-            onClick={() => setTypeFilter('faculty')}
-          >
-            Faculty ({facultyCount})
-          </button>
-          <button
-            type="button"
-            className={`filter-chip paper ${typeFilter === 'paper' ? 'active' : ''}`}
-            onClick={() => setTypeFilter('paper')}
-          >
-            Papers ({paperCount})
-          </button>
-          <button
-            type="button"
-            className={`filter-chip topic ${typeFilter === 'topic' ? 'active' : ''}`}
-            onClick={() => setTypeFilter('topic')}
-          >
-            Topics ({topicCount})
-          </button>
-        </div>
-
-        {/* Payload Density Limit Selector */}
-        <div className="graph-type-filters" style={{ borderLeft: '1px solid #cbd5e1', paddingLeft: 8 }}>
-          <span className="muted" style={{ fontSize: 11 }}>Density:</span>
-          {[150, 300, 500].map((l) => (
-            <button
-              key={l}
-              type="button"
-              className={`filter-chip ${nodeLimit === l ? 'active' : ''}`}
-              style={{ minHeight: 24, padding: '1px 7px', fontSize: 10 }}
-              onClick={() => handleLimitChange(l)}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-
-        <div className="graph-controls">
-          {/* Node Budget Selector */}
-          <select
-            value={nodeLimit}
-            onChange={(e) => handleLimitChange(Number(e.target.value))}
-            className="graph-limit-select"
-            title="Adjust node density and budget"
-            style={{
-              fontSize: '11px',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              border: isDarkMode ? '1px solid rgba(255,255,255,0.15)' : '1px solid #cbd5e1',
-              background: isDarkMode ? '#1e293b' : '#ffffff',
-              color: isDarkMode ? '#e2e8f0' : '#1e293b',
-              fontWeight: 500,
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            <option value={300}>300 nodes</option>
-            <option value={600}>600 nodes</option>
-            <option value={1200}>1,200 nodes</option>
-            <option value={2500}>2,500 nodes (Full Corpus)</option>
-          </select>
-
-          {/* Theme Switcher Toggle */}
-          <button
-            type="button"
-            className="icon-button"
-            title={isDarkMode ? 'Light Canvas' : 'Dark Obsidian Canvas'}
-            onClick={() => setIsDarkMode(!isDarkMode)}
-          >
-            {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-          </button>
-
-          <button
-            type="button"
-            className="icon-button"
-            title="Zoom In"
-            onClick={() => graphRef.current?.zoom(graphRef.current.zoom() * 1.3, 250)}
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            title="Zoom Out"
-            onClick={() => graphRef.current?.zoom(graphRef.current.zoom() / 1.3, 250)}
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            title="Fit to Screen"
-            onClick={() => graphRef.current?.zoomToFit(400, 32)}
-          >
-            <Maximize2 className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            title="Refresh"
-            onClick={() => void loadGraph(topicQuery, centerNodeId, hops, nodeLimit)}
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
+    <section className="knowledge-graph" aria-label="Knowledge graph explorer">
+      <header className="kg-heading">
+        <div><h1><Network size={21} /> Knowledge graph</h1><p>Explore how faculty, papers, and research topics connect.</p></div>
+        <button type="button" className="kg-button" onClick={() => setRefresh(value => value + 1)} disabled={loading}><RefreshCw size={15} /> Refresh</button>
+      </header>
+      <div className="kg-toolbar">
+        <form className="kg-search" onSubmit={event => { event.preventDefault(); setCenterId(null); setCluster(''); setTypeFilter('all'); setAppliedQuery(query.trim()); fitPending.current = true; }}>
+          <label htmlFor="graph-search" className="sr-only">Search faculty, papers, or topics</label>
+          <Search size={16} aria-hidden="true" />
+          <input id="graph-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search faculty, papers, or topics" />
+          <button className="kg-button" type="submit" disabled={loading}>Search</button>
+        </form>
+        <label className="kg-field">Show<select aria-label="Record type" value={typeFilter} onChange={event => { setTypeFilter(event.target.value); setSelectedId(null); fitPending.current = true; }}>
+          <option value="all">All record types</option><option value="faculty">Faculty</option><option value="paper">Papers</option><option value="topic">Topics</option>
+        </select></label>
+        <label className="kg-field">Research area<select aria-label="Research area" value={cluster} onChange={event => { setCluster(event.target.value); setSelectedId(null); fitPending.current = true; }}>
+          <option value="">All areas</option>{areas.map(area => <option key={area} value={area}>{area.replace(/^Topic: /, '')}</option>)}
+        </select></label>
+        <label className="kg-field">Graph size<select aria-label="Graph size" value={limit} onChange={event => setLimit(Number(event.target.value))}>
+          <option value={150}>150 records</option><option value={300}>300 records</option><option value={600}>600 records</option><option value={1200}>1,200 records</option><option value={2500}>2,500 records</option>
+        </select></label>
+        {hasFilters && <button className="kg-button" type="button" onClick={reset}>Reset filters</button>}
       </div>
-
-      {/* Ego-Network Focus Banner */}
-      {(centerNodeId || data.center_node) && (
-        <div className="graph-ego-banner">
-          <div className="graph-ego-info">
-            <Target className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <span>
-              Ego-network centered on{' '}
-              <strong>
-                {data.center_node?.name || selectedNode?.name || centerNodeId}
-              </strong>
-            </span>
-            <span className="count-badge">
-              {filteredNodes.length} connected nodes within {hops} hops
-            </span>
-            <div className="graph-ego-hops">
-              <span className="muted" style={{ fontSize: 11 }}>Depth:</span>
-              {[1, 2, 3].map((h) => (
-                <button
-                  key={h}
-                  type="button"
-                  className={hops === h ? 'active' : ''}
-                  onClick={() => handleHopsChange(h)}
-                >
-                  {h} {h === 1 ? 'hop' : 'hops'}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button type="button" className="button small" onClick={handleExitEgo}>
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset to Global Graph</span>
-          </button>
+      {centerId && <div className="kg-focus-bar"><span><Focus size={16} /> Connections to <strong>{data.center_node?.name || data.nodes.find(node => node.id === centerId)?.name || 'selected record'}</strong></span>
+        <label>Connection depth <select aria-label="Connection depth" value={hops} onChange={event => setHops(Number(event.target.value))}><option value={1}>Direct connections</option><option value={2}>2 steps away</option><option value={3}>3 steps away</option></select></label>
+        <button className="kg-button" type="button" onClick={reset}><ArrowLeft size={14} /> Full graph</button>
+      </div>}
+      <div className={`kg-body ${selectedNode ? 'has-selection' : ''}`}>
+        <div className="kg-canvas" ref={canvasRef} aria-label="Interactive network. Select a record below to inspect it using the keyboard.">
+          {!loading && !error && graphData.nodes.length > 0 && dimensions.width > 0 && dimensions.height > 0 && <ForceGraph2D
+            ref={graphRef} width={dimensions.width} height={dimensions.height} graphData={graphData}
+            nodeCanvasObject={drawNode} nodeLabel={node => `${nodeLabels[node.type]}: ${node.name}`}
+            nodePointerAreaPaint={(node, color, ctx) => { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(node.x ?? 0, node.y ?? 0, 9, 0, Math.PI * 2); ctx.fill(); }}
+            linkColor={() => '#c3ced8'} linkWidth={0.7} backgroundColor="#fbfcfe"
+            cooldownTicks={130} onEngineTick={() => {
+              const graph = graphRef.current;
+              if (!graph || configuredGraph.current === graphData) return;
+              configuredGraph.current = graphData;
+              graph.d3Force('charge')?.strength(-80);
+              graph.d3Force('link')?.distance(55).strength(0.15);
+              // Keep isolated records near the network instead of letting them set the camera bounds.
+              graph.d3Force('position', (alpha: number) => {
+                for (const node of graphData.nodes as NodeObject<GraphNode>[]) {
+                  node.vx = (node.vx ?? 0) - (node.x ?? 0) * alpha * 0.035;
+                  node.vy = (node.vy ?? 0) - (node.y ?? 0) * alpha * 0.035;
+                }
+              });
+            }} onEngineStop={() => { if (fitPending.current) fitGraph(); }}
+            onNodeClick={node => setSelectedId(node.id)} onBackgroundClick={() => setSelectedId(null)}
+          />}
+          {loading && <div className="kg-message" role="status"><div className="spinner" /><strong>Loading the graph…</strong><span>Finding research records and their connections.</span></div>}
+          {error && !loading && <div className="kg-message" role="alert"><Network size={30} /><strong>The graph couldn’t load</strong><span>{error}</span><button className="kg-button" onClick={() => setRefresh(value => value + 1)}>Try again</button></div>}
+          {!loading && !error && !graphData.nodes.length && <div className="kg-message" role="status"><Search size={28} /><strong>No matching records</strong><span>{hasFilters ? 'Try a broader search or reset your filters.' : 'Import research records to start exploring connections.'}</span>{hasFilters && <button className="kg-button" onClick={reset}>Reset filters</button>}</div>}
+          {!loading && !error && graphData.nodes.length > 0 && <div className="kg-map-controls" aria-label="Graph zoom controls">
+            <button type="button" className="icon-button" aria-label="Zoom in" onClick={() => { const graph = graphRef.current; if (graph) graph.zoom(graph.zoom() * 1.3, 200); }}><ZoomIn size={17} /></button>
+            <button type="button" className="icon-button" aria-label="Zoom out" onClick={() => { const graph = graphRef.current; if (graph) graph.zoom(graph.zoom() / 1.3, 200); }}><ZoomOut size={17} /></button>
+            <button type="button" className="icon-button" aria-label="Fit graph to view" onClick={fitGraph}><Maximize2 size={17} /></button>
+          </div>}
         </div>
-      )}
-
-      {/* Hierarchical Community Clusters Chips with Bounding-Box Zoom */}
-      {data.clusters && data.clusters.length > 0 && (
-        <div className="graph-cluster-chips">
-          <span className="cluster-label">
-            <Layers className="w-3.5 h-3.5 text-slate-500" />
-            <span>Clusters:</span>
-          </span>
-          <button
-            type="button"
-            className={`cluster-chip ${selectedCluster === null ? 'active' : ''}`}
-            onClick={() => handleClusterSelect(null)}
-          >
-            All Clusters ({data.nodes.length})
-          </button>
-          {data.clusters.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className={`cluster-chip ${selectedCluster === c.name ? 'active' : ''}`}
-              onClick={() => handleClusterSelect(c.name)}
-            >
-              <span className="cluster-dot" style={{ backgroundColor: c.color }} />
-              <span>{c.name}</span>
-              <span className="cluster-count">({c.count})</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Main Canvas Area with Dynamic Curved Links & Particles */}
-      <div className="graph-canvas-wrapper">
-        {loading && (
-          <div className="graph-overlay">
-            <div className="spinner" />
-            <p>Rendering interactive knowledge graph…</p>
-          </div>
-        )}
-
-        {error && !loading && (
-          <div className="graph-overlay">
-            <p className="alert error">{error}</p>
-            <button
-              type="button"
-              className="primary"
-              onClick={() => void loadGraph(topicQuery, centerNodeId, hops, nodeLimit)}
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && filteredNodes.length === 0 && (
-          <div className="graph-overlay empty-state">
-            <Network className="w-8 h-8 text-[#536779]" />
-            <h3>No graph relationships found</h3>
-            <p className="muted">
-              {topicQuery
-                ? `No nodes match topic "${topicQuery}". Try clearing the filter.`
-                : selectedCluster
-                ? `No nodes found in cluster "${selectedCluster}".`
-                : 'No public records found. Import public records or sample data to populate the graph.'}
-            </p>
-            {(topicQuery || selectedCluster) && (
-              <button type="button" className="button" onClick={handleResetFilter}>
-                Clear Filters
-              </button>
-            )}
-          </div>
-        )}
-
-        {!loading && !error && dimensions.width > 0 && dimensions.height > 0 && (
-          <ForceGraph2D
-            ref={graphRef}
-            width={dimensions.width}
-            height={dimensions.height}
-            graphData={filteredGraphData}
-            nodeCanvasObject={drawNode}
-            nodeCanvasObjectMode={() => 'replace'}
-            nodePointerAreaPaint={paintPointerArea}
-            nodeLabel={(node: any) =>
-              `${node.name || node.id} (${node.type})${
-                node.cluster ? ` · ${node.cluster}` : ''
-              }`
-            }
-            linkCurvature={0.08}
-            linkColor={(link: any) => {
-              const rel = link.relationship;
-              if (isDarkMode) {
-                if (rel === 'authored') return 'rgba(45, 212, 191, 0.45)';
-                if (rel === 'co_authorship') return 'rgba(129, 140, 248, 0.4)';
-                if (rel === 'addresses') return 'rgba(245, 158, 11, 0.45)';
-                if (rel === 'researches') return 'rgba(96, 165, 250, 0.4)';
-                if (rel === 'shares_concept') return 'rgba(56, 189, 248, 0.35)';
-                if (rel === 'shared_interest') return 'rgba(192, 132, 252, 0.35)';
-                return 'rgba(148, 163, 184, 0.2)';
-              }
-              if (rel === 'authored') return 'rgba(15, 118, 110, 0.45)';
-              if (rel === 'co_authorship') return 'rgba(79, 70, 229, 0.35)';
-              if (rel === 'addresses') return 'rgba(217, 119, 6, 0.4)';
-              if (rel === 'researches') return 'rgba(37, 99, 235, 0.35)';
-              if (rel === 'shares_concept') return 'rgba(2, 132, 199, 0.3)';
-              if (rel === 'shared_interest') return 'rgba(124, 58, 237, 0.3)';
-              return 'rgba(100, 116, 139, 0.22)';
-            }}
-            linkWidth={(link: any) =>
-              link.relationship === 'authored' ? 1.6 : link.relationship === 'co_authorship' ? 1.4 : 1.1
-            }
-            linkDirectionalParticles={(link: any) =>
-              link.relationship === 'authored' ? 2 : link.relationship === 'addresses' || link.relationship === 'researches' ? 1 : 0
-            }
-            linkDirectionalParticleWidth={1.5}
-            linkDirectionalParticleSpeed={0.0035}
-            linkDirectionalParticleColor={(link: any) => {
-              const rel = link.relationship;
-              if (rel === 'authored') return isDarkMode ? '#2dd4bf' : '#0d9488';
-              if (rel === 'addresses') return isDarkMode ? '#fbbf24' : '#d97706';
-              if (rel === 'researches') return isDarkMode ? '#60a5fa' : '#2563eb';
-              return isDarkMode ? '#818cf8' : '#6366f1';
-            }}
-            backgroundColor={isDarkMode ? '#090d16' : '#ffffff'}
-            warmupTicks={0}
-            cooldownTicks={40}
-            cooldownTime={1200}
-            onNodeClick={handleNodeClick}
-            enableNodeDrag={true}
-            enablePanInteraction={true}
-            enableZoomInteraction={true}
-          />
-        )}
+        {selectedNode && !loading && <aside className="kg-details" aria-label="Record details">
+          <div className="kg-detail-heading"><span className="kg-kind"><i style={{ background: nodeColors[selectedNode.type] }} />{nodeLabels[selectedNode.type]}</span><button className="icon-button" aria-label="Close record details" onClick={() => setSelectedId(null)}><X size={16} /></button></div>
+          <h2>{selectedNode.name}</h2>
+          {selectedNode.evidence_kind === 'synthetic' && <p className="kg-sample">Example record</p>}
+          <dl>{selectedNode.cluster && <div><dt>Research area</dt><dd>{selectedNode.cluster.replace(/^Topic: /, '')}</dd></div>}
+            {(['department', 'year', 'faculty_author', 'doi'] as const).map(key => selectedNode.metadata?.[key] ? <div key={key}><dt>{{ department: 'Department', year: 'Published', faculty_author: 'Faculty author', doi: 'DOI' }[key]}</dt><dd>{String(selectedNode.metadata[key])}</dd></div> : null)}
+          </dl>
+          {selectedNode.metadata?.abstract && <div className="kg-abstract"><h3>Abstract</h3><p>{String(selectedNode.metadata.abstract)}</p></div>}
+          {safeOrigin(selectedNode.origin ?? '') && <a className="kg-source" href={safeOrigin(selectedNode.origin ?? '')} target="_blank" rel="noopener noreferrer">View original source <ExternalLink size={14} /></a>}
+          <button className="kg-button kg-primary" onClick={() => focusNode(selectedNode.id)} disabled={centerId === selectedNode.id}><Focus size={15} />{centerId === selectedNode.id ? 'Showing connections' : 'Explore connections'}</button>
+          {selectedNode.type === 'topic' && onSearchTopic && <button className="kg-button" onClick={() => onSearchTopic(selectedNode.name)}>Search this topic</button>}
+          {selectedNode.type !== 'topic' && onAttachSource && proposalOpen && <button className="kg-button" disabled={attachedSourceIds.includes(selectedNode.id)} onClick={() => onAttachSource(selectedNode.id)}>{attachedSourceIds.includes(selectedNode.id) ? 'Attached to proposal' : 'Attach to proposal'}</button>}
+          <h3>Connections in this graph ({connections.length})</h3>
+          <div className="kg-connections">{connections.slice(0, 30).map((link, index) => {
+            const id = endpointId(link.source) === selectedNode.id ? endpointId(link.target) : endpointId(link.source);
+            const other = data.nodes.find(node => node.id === id);
+            return other ? <button key={`${id}-${index}`} type="button" onClick={() => { setTypeFilter('all'); setCluster(''); selectNode(id); }}><span>{other.name}</span><small>{link.relationship.replaceAll('_', ' ')}</small></button> : null;
+          })}{!connections.length && <p>No connections in the loaded records. Try increasing the graph size.</p>}{connections.length > 30 && <p>Showing 30 connections. Explore this record to see its neighborhood.</p>}</div>
+        </aside>}
       </div>
-
-      {/* Modern Detailed Node Inspection Drawer */}
-      {selectedNode && (
-        <aside className="graph-node-drawer" aria-label="Node details">
-          <div className="drawer-header">
-            <span className={`tag ${selectedNode.type}`}>
-              {selectedNode.type === 'faculty' && '🎓 '}
-              {selectedNode.type === 'paper' && '📄 '}
-              {selectedNode.type === 'topic' && '🏷️ '}
-              {selectedNode.type.toUpperCase()}
-            </span>
-            {selectedNode.evidence_kind && (
-              <span
-                className={`evidence ${
-                  selectedNode.evidence_kind === 'synthetic' ? 'synthetic' : ''
-                }`}
-              >
-                {selectedNode.evidence_kind === 'synthetic'
-                  ? 'Synthetic sample'
-                  : 'Public evidence'}
-              </span>
-            )}
-            <button
-              type="button"
-              className="close-button"
-              aria-label="Close details"
-              onClick={() => setSelectedNode(null)}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <h3 className="drawer-title">{selectedNode.name}</h3>
-
-          {/* Quick stats badges row */}
-          <div className="drawer-stats-row">
-            {selectedNode.metadata?.year && (
-              <span className="drawer-stat-badge year">
-                <Calendar className="w-3 h-3" />
-                <span>{selectedNode.metadata.year}</span>
-              </span>
-            )}
-            {selectedNode.metadata?.citations !== undefined && (
-              <span className="drawer-stat-badge citations">
-                <Star className="w-3 h-3" />
-                <span>{selectedNode.metadata.citations} citations</span>
-              </span>
-            )}
-            {selectedNode.metadata?.faculty_author && (
-              <span className="drawer-stat-badge">
-                <User className="w-3 h-3" />
-                <span>{selectedNode.metadata.faculty_author}</span>
-              </span>
-            )}
-          </div>
-
-          {selectedNode.cluster && (
-            <div className="drawer-cluster">
-              <span
-                className="cluster-dot"
-                style={{
-                  backgroundColor: selectedNode.cluster_color || '#2563eb',
-                }}
-              />
-              <span>{selectedNode.cluster}</span>
-            </div>
-          )}
-
-          {selectedNode.origin && (
-            <div className="drawer-origin">
-              {safeOrigin(selectedNode.origin) ? (
-                <a
-                  href={safeOrigin(selectedNode.origin)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="external-link"
-                >
-                  <span>
-                    {selectedNode.type === 'paper' ? 'View Google Scholar / DOI' : 'View faculty profile'}
-                  </span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              ) : (
-                <span className="muted">{selectedNode.origin}</span>
-              )}
-            </div>
-          )}
-
-          {/* Abstract reader card for papers */}
-          {selectedNode.metadata?.abstract && (
-            <div className="drawer-abstract">
-              <h4>
-                <BookOpen className="w-3 h-3 inline mr-1" />
-                Abstract
-              </h4>
-              <p>{selectedNode.metadata.abstract}</p>
-            </div>
-          )}
-
-          {/* Structured metadata facts */}
-          {selectedNode.metadata && Object.keys(selectedNode.metadata).length > 0 && (
-            <div className="drawer-metadata">
-              <h4>Metadata & Provenance</h4>
-              {selectedNode.metadata.doi && (
-                <p>
-                  <strong>DOI:</strong> {selectedNode.metadata.doi}
-                </p>
-              )}
-              {selectedNode.metadata.authors && (
-                <p>
-                  <strong>Authors:</strong>{' '}
-                  {Array.isArray(selectedNode.metadata.authors)
-                    ? selectedNode.metadata.authors.join(', ')
-                    : selectedNode.metadata.authors}
-                </p>
-              )}
-              {selectedNode.metadata.department && (
-                <p>
-                  <strong>Department:</strong> {selectedNode.metadata.department}
-                </p>
-              )}
-              {selectedNode.metadata.interests && (
-                <p>
-                  <strong>Research areas:</strong>{' '}
-                  {Array.isArray(selectedNode.metadata.interests)
-                    ? selectedNode.metadata.interests.join(', ')
-                    : selectedNode.metadata.interests}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Connected Links / Relationships preview */}
-          {(() => {
-            const connectedLinks = filteredLinks.filter(
-              (l: any) =>
-                (typeof l.source === 'object' ? l.source.id : l.source) === selectedNode.id ||
-                (typeof l.target === 'object' ? l.target.id : l.target) === selectedNode.id
-            );
-            if (connectedLinks.length === 0) return null;
-            return (
-              <div className="drawer-connections" style={{ marginTop: '12px', marginBottom: '12px' }}>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', marginBottom: '6px' }}>
-                  Connections ({connectedLinks.length})
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '140px', overflowY: 'auto' }}>
-                  {connectedLinks.slice(0, 10).map((l: any, idx: number) => {
-                    const isSrc = (typeof l.source === 'object' ? l.source.id : l.source) === selectedNode.id;
-                    const other = isSrc
-                      ? typeof l.target === 'object'
-                        ? l.target.name || l.target.id
-                        : l.target
-                      : typeof l.source === 'object'
-                      ? l.source.name || l.source.id
-                      : l.source;
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          fontSize: '11px',
-                          padding: '4px 6px',
-                          borderRadius: '4px',
-                          background: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f1f5f9',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <span style={{ fontWeight: 600, color: isDarkMode ? '#93c5fd' : '#2563eb' }}>
-                          {l.relationship}
-                        </span>
-                        <span
-                          style={{
-                            color: isDarkMode ? '#cbd5e1' : '#475569',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '160px',
-                          }}
-                        >
-                          {other}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  {connectedLinks.length > 10 && (
-                    <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>
-                      + {connectedLinks.length - 10} more connections
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          <div className="drawer-actions">
-            {/* Ego-Network neighborhood exploration button */}
-            <button
-              type="button"
-              className="button primary wide"
-              onClick={() => handleFocusEgo(selectedNode.id)}
-              disabled={centerNodeId === selectedNode.id}
-            >
-              <Focus className="w-3.5 h-3.5 mr-1" />
-              <span>
-                {centerNodeId === selectedNode.id
-                  ? 'Currently Center Node'
-                  : selectedNode.type === 'faculty'
-                  ? 'Explore Faculty Publications (2 Hops)'
-                  : 'Explore Paper Ego-Network (2 Hops)'}
-              </span>
-            </button>
-
-            {selectedNode.type === 'topic' && onSearchTopic && (
-              <button
-                type="button"
-                className="button wide"
-                onClick={() => onSearchTopic(selectedNode.name)}
-              >
-                Search topic in Discovery
-              </button>
-            )}
-
-            {selectedNode.type !== 'topic' && onAttachSource && proposalOpen && (
-              <button
-                type="button"
-                className="button wide"
-                disabled={attachedSourceIds.includes(selectedNode.id)}
-                onClick={() => onAttachSource(selectedNode.id)}
-              >
-                {attachedSourceIds.includes(selectedNode.id)
-                  ? 'Attached to proposal'
-                  : 'Attach to open proposal'}
-              </button>
-            )}
-          </div>
-        </aside>
-      )}
-    </div>
+      <footer className="kg-footer"><div className="kg-legend">{Object.entries(nodeLabels).map(([key, label]) => <span key={key}><i style={{ background: nodeColors[key as keyof typeof nodeColors] }} />{label === 'Paper' ? 'Papers' : label === 'Topic' ? 'Topics' : label}</span>)}</div><span role="status">{loading ? 'Loading…' : `${graphData.nodes.length.toLocaleString()} records · ${graphData.links.length.toLocaleString()} connections`}</span><span>Scroll to zoom. Drag to pan. Select a record for details.</span></footer>
+      {!loading && !error && graphData.nodes.length > 0 && <details className="kg-record-list"><summary>Browse records as a list ({graphData.nodes.length})</summary><div>{graphData.nodes.map(node => <button key={node.id} type="button" onClick={() => selectNode(node.id)} aria-pressed={selectedId === node.id}><span>{node.name}</span><small>{nodeLabels[node.type]}</small></button>)}</div></details>}
+    </section>
   );
 }

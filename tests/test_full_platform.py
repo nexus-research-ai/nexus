@@ -89,7 +89,10 @@ import os
 
 def test_campus_graph_dataset_and_query():
     g = LivingCampusGraph()
-    dataset_path = '/Users/anurag/Startups/nexus/data/nexus_full_graph.json'
+    dataset_path = os.environ.get(
+        "NEXUS_GRAPH_DATA",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/nexus_full_graph.json"))
+    )
     if os.path.exists(dataset_path):
         assert g.load_dataset(dataset_path) is True
         res = g.query_graph(limit=50)

@@ -1,0 +1,12 @@
+{
+  "total_duration_seconds": 180,
+  "segments": 13,
+  "subtitle_cues": 52,
+  "subtitle_monotonic": true,
+  "subtitle_max_lines": 2,
+  "all_segments_exact_duration": true,
+  "speech_finishes_before_each_boundary": true,
+  "max_tempo": 1.114935,
+  "mean_volume_dbfs": -17.9,
+  "peak_volume_dbfs": -2.8
+}
